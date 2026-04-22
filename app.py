@@ -218,11 +218,69 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
     background: #C8922A22 !important; color: #C8922A !important;
     border-color: #C8922A66 !important;
 }
-/* Dropdown */
-[data-testid="stSelectbox"] > div > div { padding: 0.5rem 0.75rem !important; }
-[data-baseweb="popover"] { background: #161920 !important; border: 1px solid #252830 !important; }
-[data-baseweb="menu"] li { color: #C8CDD6 !important; font-size: 0.85rem !important; }
-[data-baseweb="menu"] li:hover { background: #C8922A18 !important; }
+/* ── Selectbox — fix complet BaseWeb ── */
+
+/* Conteneur principal du select */
+[data-testid="stSelectbox"] > div > div {
+    padding: 0.5rem 0.75rem !important;
+    background: #161920 !important;
+    border: 1px solid #252830 !important;
+    border-radius: 8px !important;
+}
+
+/* Texte affiché dans le select (valeur sélectionnée) */
+[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+[data-testid="stSelectbox"] [data-baseweb="select"] > div > div,
+[data-testid="stSelectbox"] [data-baseweb="select"] span,
+[data-testid="stSelectbox"] div[class*="ValueContainer"] div,
+[data-testid="stSelectbox"] div[class*="SingleValue"],
+[data-testid="stSelectbox"] div[class*="Placeholder"] {
+    color: #E8E9EC !important;
+    background: transparent !important;
+}
+
+/* Icône chevron */
+[data-testid="stSelectbox"] svg { color: #8B909A !important; fill: #8B909A !important; }
+
+/* Fond du conteneur BaseWeb select */
+[data-baseweb="select"] > div:first-child {
+    background: #161920 !important;
+    border-color: #252830 !important;
+    border-radius: 8px !important;
+}
+[data-baseweb="select"] > div:first-child:hover {
+    border-color: #C8922A66 !important;
+}
+
+/* Dropdown ouvert — liste d'options */
+[data-baseweb="popover"] {
+    background: #161920 !important;
+    border: 1px solid #252830 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important;
+}
+[data-baseweb="menu"] {
+    background: #161920 !important;
+}
+[data-baseweb="menu"] ul { background: #161920 !important; }
+[data-baseweb="menu"] li,
+[data-baseweb="option"] {
+    background: #161920 !important;
+    color: #C8CDD6 !important;
+    font-size: 0.85rem !important;
+    font-family: 'Inter', sans-serif !important;
+}
+[data-baseweb="menu"] li:hover,
+[data-baseweb="option"]:hover {
+    background: #C8922A18 !important;
+    color: #E8E9EC !important;
+}
+/* Option sélectionnée dans la liste */
+[aria-selected="true"] {
+    background: #C8922A22 !important;
+    color: #C8922A !important;
+}
+
 [data-testid="stTooltipIcon"] { color: #686D78 !important; }
 
 /* ══════════════════════════════════
