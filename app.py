@@ -306,53 +306,63 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
 [data-testid="stTooltipIcon"] { color: #686D78 !important; }
 
 /* ══════════════════════════════════
-   RADIO BUTTONS — Style pill/tag
+   RADIO BUTTONS — Style pill horizontal
 ══════════════════════════════════ */
-[data-testid="stRadio"] > div {
-    gap: 4px !important;
-    flex-direction: column !important;
-}
-[data-testid="stRadio"] label {
+
+/* Conteneur flex horizontal */
+[data-testid="stRadio"] > div[role="radiogroup"] {
     display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    flex-direction: row !important;
+}
+
+/* Chaque label = pill */
+[data-testid="stRadio"] label {
+    display: inline-flex !important;
     align-items: center !important;
-    gap: 8px !important;
-    padding: 7px 12px !important;
-    border-radius: 7px !important;
-    border: 1px solid #1E2028 !important;
+    gap: 6px !important;
+    padding: 6px 14px !important;
+    border-radius: 20px !important;
+    border: 1px solid #252830 !important;
     background: #161920 !important;
     cursor: pointer !important;
     transition: all 0.15s ease !important;
-    font-size: 0.84rem !important;
+    font-size: 0.82rem !important;
     font-weight: 500 !important;
     color: #C8CDD6 !important;
     text-transform: none !important;
     letter-spacing: 0 !important;
-    margin-bottom: 3px !important;
-    width: 100% !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+    width: auto !important;
 }
 [data-testid="stRadio"] label:hover {
-    border-color: #C8922A55 !important;
+    border-color: #C8922A88 !important;
     background: #1E2028 !important;
     color: #E8E9EC !important;
 }
-/* Radio circle */
+
+/* Cacher le radio natif, garder le comportement */
 [data-testid="stRadio"] input[type="radio"] {
-    accent-color: #C8922A !important;
-    width: 14px !important;
-    height: 14px !important;
-    flex-shrink: 0 !important;
+    display: none !important;
 }
-/* Selected label */
+
+/* Pill sélectionnée */
 [data-testid="stRadio"] label:has(input:checked) {
-    border-color: #C8922A66 !important;
-    background: #C8922A15 !important;
+    border-color: #C8922A !important;
+    background: linear-gradient(135deg, #2D1500, #3D1E00) !important;
     color: #C8922A !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 0 0 1px #C8922A44 !important;
 }
+
+/* Texte dans le label */
 [data-testid="stRadio"] p {
     color: inherit !important;
-    font-size: 0.84rem !important;
+    font-size: 0.82rem !important;
     margin: 0 !important;
+    line-height: 1 !important;
 }
 
 /* ══════════════════════════════════
@@ -734,26 +744,53 @@ with st.form("scoring_form"):
     </div>
     """, unsafe_allow_html=True)
 
-    c1, c2, c3 = st.columns(3)
+    # ── Ligne 1 : 4 variables numériques ──
+    c1, c2, c3, c4 = st.columns(4)
     with c1:
-        revenu = st.number_input("Revenu Mensuel (FCFA)", min_value=0, max_value=10_000_000,
-            value=350_000, step=10_000, help="Revenu mensuel brut déclaré")
-        ratio_endettement = st.number_input("Ratio d'Endettement", min_value=0.0, max_value=1.0,
-            value=0.35, step=0.01, format="%.2f", help="Part du revenu consacrée aux remboursements")
-        score_interne = st.number_input("Score Interne Banque", min_value=0, max_value=1000,
-            value=500, step=10, help="Score de risque interne (0 = très risqué, 1000 = excellent)")
+        revenu = st.number_input(
+            "Revenu Mensuel (FCFA)",
+            min_value=0, max_value=10_000_000, value=350_000, step=10_000,
+            help="Revenu mensuel brut déclaré du client")
     with c2:
-        nb_incidents = st.number_input("Incidents de Paiement", min_value=0, max_value=50,
-            value=0, step=1, help="Nombre total d'incidents de paiement enregistrés")
-        jours_retard = st.number_input("Retard Maximum (jours)", min_value=0, max_value=365,
-            value=0, step=1, help="Nombre maximal de jours de retard observé")
-        nb_rejets = st.number_input("Rejets de Prélèvement", min_value=0, max_value=50,
-            value=0, step=1, help="Nombre de prélèvements automatiques rejetés")
+        ratio_endettement = st.number_input(
+            "Ratio d'Endettement",
+            min_value=0.0, max_value=1.0, value=0.35, step=0.01, format="%.2f",
+            help="Part du revenu mensuel consacrée aux remboursements (0 à 1)")
     with c3:
-        nb_decouvert = st.number_input("Découverts (12 mois)", min_value=0, max_value=30,
-            value=0, step=1, help="Nombre de fois en découvert sur les 12 derniers mois")
-        anciennete = st.number_input("Ancienneté Client (mois)", min_value=0, max_value=360,
-            value=24, step=1, help="Durée de la relation bancaire en mois")
+        score_interne = st.number_input(
+            "Score Interne Banque",
+            min_value=0, max_value=1000, value=500, step=10,
+            help="Score de risque calculé en interne (0 = très risqué, 1000 = excellent)")
+    with c4:
+        nb_incidents = st.number_input(
+            "Incidents de Paiement",
+            min_value=0, max_value=50, value=0, step=1,
+            help="Nombre total d'incidents de paiement dans l'historique")
+
+    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+
+    # ── Ligne 2 : 4 variables numériques ──
+    c5, c6, c7, c8 = st.columns(4)
+    with c5:
+        jours_retard = st.number_input(
+            "Retard Maximum (jours)",
+            min_value=0, max_value=365, value=0, step=1,
+            help="Nombre maximal de jours de retard observé sur un crédit")
+    with c6:
+        nb_rejets = st.number_input(
+            "Rejets de Prélèvement",
+            min_value=0, max_value=50, value=0, step=1,
+            help="Nombre de prélèvements automatiques rejetés faute de provision")
+    with c7:
+        nb_decouvert = st.number_input(
+            "Découverts (12 mois)",
+            min_value=0, max_value=30, value=0, step=1,
+            help="Nombre de fois en situation de découvert sur les 12 derniers mois")
+    with c8:
+        anciennete = st.number_input(
+            "Ancienneté Client (mois)",
+            min_value=0, max_value=360, value=24, step=1,
+            help="Durée de la relation bancaire en mois")
 
     st.markdown('<div class="form-divider"></div>', unsafe_allow_html=True)
 
@@ -761,26 +798,26 @@ with st.form("scoring_form"):
     st.markdown(f"""
     <div class="section-header">
         <div class="section-icon slate">{icon_briefcase()}</div>
-        <div class="section-title-text">Profil Professionnel & Garanties</div>
+        <div class="section-title-text">Profil Professionnel & Garanties — Variables 9 &amp; 10</div>
     </div>
     """, unsafe_allow_html=True)
 
-    c4, c5 = st.columns(2)
-    with c4:
-        st.markdown("<p style='font-size:0.78rem;font-weight:600;color:#8B909A;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;'>TYPE D'EMPLOI</p>", unsafe_allow_html=True)
+    c9, c10 = st.columns(2)
+    with c9:
+        st.markdown("<p style='font-size:0.72rem;font-weight:700;color:#8B909A;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;'>Type d'Emploi</p>", unsafe_allow_html=True)
         type_emploi = st.radio(
-            "type_emploi",
+            "Type d'Emploi",
             options=["CDI", "Fonctionnaire", "CDD", "Indépendant", "Entrepreneur", "Retraité", "Sans emploi"],
-            horizontal=False,
+            horizontal=True,
             label_visibility="collapsed",
             key="type_emploi_radio"
         )
-    with c5:
-        st.markdown('<p style="font-size:0.78rem;font-weight:600;color:#8B909A;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Garantie Apportée</p>', unsafe_allow_html=True)
+    with c10:
+        st.markdown("<p style='font-size:0.72rem;font-weight:700;color:#8B909A;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;'>Garantie Apportée</p>", unsafe_allow_html=True)
         garantie = st.radio(
             "Garantie Apportée",
             options=["Hypothèque", "Assurance", "Caution", "Nantissement", "Aucune"],
-            horizontal=False,
+            horizontal=True,
             label_visibility="collapsed",
             key="garantie_radio"
         )
