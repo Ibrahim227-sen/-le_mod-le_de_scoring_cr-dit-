@@ -1,551 +1,787 @@
 """
 app.py — Application de Scoring Crédit
 MBA1 Finance Digitale — ISM Dakar 2025-2026
-
-Interface Streamlit permettant à un conseiller bancaire de saisir
-les informations d'un client et d'obtenir instantanément :
-  - La probabilité de défaut (en %)
-  - La décision crédit (Accordé / Refusé)
-  - Un score de risque sur 1000 points
-
-Usage :
-    streamlit run app.py
 """
 
 import streamlit as st
 import pandas as pd
-import numpy as np
 import joblib
 import os
 
-# ─────────────────────────────────────────────
-# CONFIGURATION DE LA PAGE
-# ─────────────────────────────────────────────
 st.set_page_config(
-    page_title="Scoring Crédit — ISM Dakar",
-    page_icon="🏦",
+    page_title="CreditScore Pro — ISM Dakar",
+    page_icon="💳",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ─────────────────────────────────────────────
-# CSS PERSONNALISÉ — COULEURS ISM (Marron & Or)
-# ─────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════
+#  DESIGN SYSTEM — Dark Pro Theme + ISM Brand Colors
+# ═══════════════════════════════════════════════════════════
 st.markdown("""
 <style>
-    /* Variables de couleurs ISM */
-    :root {
-        --ism-marron: #5C2E00;
-        --ism-or:     #C8922A;
-        --ism-or-clair: #F0D090;
-        --vert:       #1A7F3C;
-        --rouge:      #C0392B;
-    }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-    /* En-tête principal */
-    .main-header {
-        background: linear-gradient(135deg, var(--ism-marron) 0%, #8B4513 100%);
-        padding: 1.5rem 2rem;
-        border-radius: 12px;
-        margin-bottom: 1.5rem;
-        text-align: center;
-        border-left: 6px solid var(--ism-or);
-    }
-    .main-header h1 { color: var(--ism-or); margin: 0; font-size: 1.8rem; }
-    .main-header p  { color: #F5E6C8; margin: 0.3rem 0 0 0; font-size: 0.95rem; }
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; }
 
-    /* Carte de résultat — Accordé */
-    .result-accord {
-        background: linear-gradient(135deg, #0D4F2A, #1A7F3C);
-        border: 2px solid #27AE60;
-        border-radius: 12px;
-        padding: 1.5rem;
-        text-align: center;
-        color: white;
-    }
-    /* Carte de résultat — Refusé */
-    .result-refuse {
-        background: linear-gradient(135deg, #6B1A1A, #C0392B);
-        border: 2px solid #E74C3C;
-        border-radius: 12px;
-        padding: 1.5rem;
-        text-align: center;
-        color: white;
-    }
-    .result-title  { font-size: 2rem; font-weight: 700; margin: 0; }
-    .result-sub    { font-size: 1rem; opacity: 0.85; margin-top: 0.3rem; }
+html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+    background: #0D0F12 !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
 
-    /* Score badge */
-    .score-badge {
-        background: var(--ism-marron);
-        border: 3px solid var(--ism-or);
-        border-radius: 50%;
-        width: 130px; height: 130px;
-        display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        margin: 0 auto 1rem auto;
-    }
-    .score-number { color: var(--ism-or); font-size: 2.2rem; font-weight: 800; line-height: 1; }
-    .score-label  { color: #F5E6C8; font-size: 0.7rem; letter-spacing: 1px; }
+/* ── Masquer éléments Streamlit par défaut ── */
+#MainMenu, footer, header { visibility: hidden; }
+[data-testid="stDecoration"] { display: none; }
+.block-container { padding: 1.5rem 2rem 2rem !important; max-width: 1400px; }
 
-    /* Section formulaire */
-    .section-title {
-        color: var(--ism-marron);
-        font-size: 1rem;
-        font-weight: 700;
-        border-bottom: 2px solid var(--ism-or);
-        padding-bottom: 4px;
-        margin-bottom: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
+/* ══════════════════════════════════
+   SIDEBAR
+══════════════════════════════════ */
+[data-testid="stSidebar"] {
+    background: #111318 !important;
+    border-right: 1px solid #1E2028 !important;
+}
+[data-testid="stSidebar"] > div:first-child { padding: 0 !important; }
 
-    /* Bouton principal */
-    .stButton > button {
-        background: linear-gradient(135deg, var(--ism-marron), #8B4513) !important;
-        color: var(--ism-or) !important;
-        border: 2px solid var(--ism-or) !important;
-        border-radius: 8px !important;
-        font-weight: 700 !important;
-        font-size: 1.05rem !important;
-        padding: 0.6rem 2rem !important;
-        width: 100%;
-        transition: all 0.3s ease;
-    }
-    .stButton > button:hover {
-        background: var(--ism-or) !important;
-        color: var(--ism-marron) !important;
-    }
+.sidebar-brand {
+    background: linear-gradient(135deg, #1a0a00 0%, #2d1200 100%);
+    border-bottom: 1px solid #C8922A33;
+    padding: 1.4rem 1.2rem 1.2rem;
+    margin-bottom: 0;
+}
+.sidebar-brand-logo {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+}
+.sidebar-brand-logo svg { flex-shrink: 0; }
+.sidebar-brand-title {
+    font-size: 1rem; font-weight: 800; color: #C8922A;
+    letter-spacing: -0.3px; line-height: 1.2;
+}
+.sidebar-brand-sub {
+    font-size: 0.7rem; color: #8A7060; letter-spacing: 0.5px; text-transform: uppercase;
+    margin-left: 34px;
+}
 
-    /* Sidebar */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #F5E6C8 0%, #FAF3E0 100%);
-    }
-    [data-testid="stSidebar"] .sidebar-title {
-        color: var(--ism-marron);
-        font-weight: 700;
-        font-size: 1rem;
-        border-bottom: 2px solid var(--ism-or);
-        padding-bottom: 4px;
-        margin-bottom: 0.5rem;
-    }
+/* Sections sidebar */
+.sb-section {
+    padding: 1rem 1.2rem 0.5rem;
+    border-bottom: 1px solid #1E2028;
+}
+.sb-section-label {
+    font-size: 0.65rem; font-weight: 700; color: #C8922A;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 0.8rem; display: flex; align-items: center; gap: 6px;
+}
+.sb-section-label::after {
+    content: ''; flex: 1; height: 1px; background: #C8922A33;
+}
 
-    /* Metric cards */
-    [data-testid="stMetric"] {
-        background: #FFF8EC;
-        border: 1px solid #E8C97A;
-        border-radius: 8px;
-        padding: 0.5rem;
-    }
+/* Metric cards dans la sidebar */
+.sb-metric {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #161920; border: 1px solid #1E2028;
+    border-radius: 8px; padding: 0.6rem 0.8rem;
+    margin-bottom: 0.5rem;
+}
+.sb-metric-label {
+    font-size: 0.75rem; color: #8B909A; font-weight: 500;
+    display: flex; align-items: center; gap: 6px;
+}
+.sb-metric-label svg { opacity: 0.7; }
+.sb-metric-value {
+    font-size: 0.9rem; font-weight: 700; color: #E8E9EC;
+    font-variant-numeric: tabular-nums;
+}
+.sb-metric-value.good { color: #22C55E; }
+.sb-metric-badge {
+    font-size: 0.6rem; color: #22C55E; background: #22C55E18;
+    border: 1px solid #22C55E33; border-radius: 4px;
+    padding: 1px 5px; font-weight: 600;
+}
 
-    /* Historique */
-    .history-item {
-        background: #FFF8EC;
-        border-left: 4px solid var(--ism-or);
-        border-radius: 0 8px 8px 0;
-        padding: 0.5rem 0.8rem;
-        margin-bottom: 0.4rem;
-        font-size: 0.85rem;
-    }
-    .history-accord { border-left-color: #27AE60; }
-    .history-refuse { border-left-color: #E74C3C; }
+/* Score legend dans sidebar */
+.sb-legend-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 0.45rem 0; font-size: 0.78rem; color: #B0B5BE;
+}
+.sb-legend-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.sb-legend-range { margin-left: auto; font-weight: 600; color: #E8E9EC; font-size: 0.75rem; }
+
+/* Historique sidebar */
+.sb-hist-item {
+    display: flex; align-items: center; gap: 8px;
+    background: #161920; border: 1px solid #1E2028;
+    border-radius: 7px; padding: 0.5rem 0.7rem;
+    margin-bottom: 0.4rem; cursor: default;
+    transition: border-color 0.2s;
+}
+.sb-hist-item:hover { border-color: #C8922A44; }
+.sb-hist-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.sb-hist-name { font-size: 0.78rem; color: #C8CDD6; font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-hist-score { font-size: 0.75rem; font-weight: 700; }
+.sb-hist-proba { font-size: 0.68rem; color: #686D78; }
+
+/* ══════════════════════════════════
+   TOPBAR / HEADER
+══════════════════════════════════ */
+.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: #111318;
+    border: 1px solid #1E2028;
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+}
+.topbar-left { display: flex; align-items: center; gap: 14px; }
+.topbar-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: linear-gradient(135deg, #2d1200, #5C2E00);
+    border: 1px solid #C8922A44;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.topbar-title { font-size: 1.15rem; font-weight: 800; color: #E8E9EC; line-height: 1.2; }
+.topbar-sub { font-size: 0.72rem; color: #686D78; margin-top: 2px; }
+.topbar-right { display: flex; gap: 8px; align-items: center; }
+.topbar-badge {
+    font-size: 0.68rem; font-weight: 600; color: #C8922A;
+    background: #C8922A12; border: 1px solid #C8922A33;
+    border-radius: 6px; padding: 4px 10px; white-space: nowrap;
+}
+.topbar-badge.green {
+    color: #22C55E; background: #22C55E10; border-color: #22C55E30;
+}
+
+/* ══════════════════════════════════
+   SECTION HEADERS
+══════════════════════════════════ */
+.section-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 1rem; margin-top: 0.25rem;
+}
+.section-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.section-icon.blue  { background: #1E3A5F; border: 1px solid #2D5A8E33; }
+.section-icon.gold  { background: #2D1E00; border: 1px solid #C8922A33; }
+.section-icon.slate { background: #1A1E2A; border: 1px solid #2D3344; }
+.section-title-text { font-size: 0.82rem; font-weight: 700; color: #B0B5BE; text-transform: uppercase; letter-spacing: 1px; }
+
+/* ══════════════════════════════════
+   FORM CARD
+══════════════════════════════════ */
+.form-card {
+    background: #111318;
+    border: 1px solid #1E2028;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem 1rem;
+    margin-bottom: 1rem;
+}
+.form-divider {
+    height: 1px; background: #1E2028; margin: 1rem 0;
+}
+
+/* Inputs Streamlit — style dark */
+[data-testid="stNumberInput"] input,
+[data-testid="stTextInput"] input,
+[data-testid="stSelectbox"] > div > div {
+    background: #161920 !important;
+    border: 1px solid #252830 !important;
+    border-radius: 8px !important;
+    color: #E8E9EC !important;
+    font-size: 0.88rem !important;
+    font-family: 'Inter', sans-serif !important;
+}
+[data-testid="stNumberInput"] input:focus,
+[data-testid="stTextInput"] input:focus {
+    border-color: #C8922A66 !important;
+    box-shadow: 0 0 0 3px #C8922A18 !important;
+    outline: none !important;
+}
+[data-testid="stNumberInput"] label,
+[data-testid="stTextInput"] label,
+[data-testid="stSelectbox"] label {
+    font-size: 0.78rem !important; font-weight: 600 !important;
+    color: #8B909A !important; letter-spacing: 0.3px;
+    text-transform: uppercase !important;
+}
+/* +/- buttons */
+[data-testid="stNumberInput"] button {
+    background: #1E2028 !important; border: 1px solid #252830 !important;
+    color: #8B909A !important; border-radius: 6px !important;
+}
+[data-testid="stNumberInput"] button:hover {
+    background: #C8922A22 !important; color: #C8922A !important;
+    border-color: #C8922A66 !important;
+}
+/* Dropdown */
+[data-testid="stSelectbox"] > div > div { padding: 0.5rem 0.75rem !important; }
+[data-baseweb="popover"] { background: #161920 !important; border: 1px solid #252830 !important; }
+[data-baseweb="menu"] li { color: #C8CDD6 !important; font-size: 0.85rem !important; }
+[data-baseweb="menu"] li:hover { background: #C8922A18 !important; }
+[data-testid="stTooltipIcon"] { color: #686D78 !important; }
+
+/* ══════════════════════════════════
+   BOUTON PRÉDIRE
+══════════════════════════════════ */
+[data-testid="stFormSubmitButton"] > button,
+.stButton > button {
+    background: linear-gradient(135deg, #5C2E00 0%, #8B4513 100%) !important;
+    color: #C8922A !important;
+    border: 1px solid #C8922A55 !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    font-size: 0.9rem !important;
+    letter-spacing: 0.5px !important;
+    padding: 0.65rem 2rem !important;
+    width: 100% !important;
+    transition: all 0.25s ease !important;
+    font-family: 'Inter', sans-serif !important;
+    text-transform: uppercase !important;
+}
+[data-testid="stFormSubmitButton"] > button:hover,
+.stButton > button:hover {
+    background: linear-gradient(135deg, #C8922A 0%, #D4A843 100%) !important;
+    color: #1a0a00 !important;
+    border-color: transparent !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px #C8922A33 !important;
+}
+
+/* ══════════════════════════════════
+   RÉSULTATS
+══════════════════════════════════ */
+.result-banner {
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    position: relative; overflow: hidden;
+}
+.result-banner.accord {
+    background: linear-gradient(135deg, #0A2417 0%, #0F3620 100%);
+    border: 1px solid #22C55E44;
+}
+.result-banner.refuse {
+    background: linear-gradient(135deg, #240A0A 0%, #361010 100%);
+    border: 1px solid #EF444444;
+}
+.result-icon { font-size: 2.2rem; margin-bottom: 0.4rem; line-height: 1; }
+.result-label {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 0.3rem;
+}
+.result-label.accord { color: #4ADE80; }
+.result-label.refuse { color: #F87171; }
+.result-decision {
+    font-size: 1.6rem; font-weight: 800; line-height: 1.1;
+}
+.result-decision.accord { color: #22C55E; }
+.result-decision.refuse { color: #EF4444; }
+.result-msg {
+    font-size: 0.76rem; margin-top: 0.5rem; opacity: 0.7; line-height: 1.4;
+}
+.result-msg.accord { color: #BBF7D0; }
+.result-msg.refuse { color: #FECACA; }
+
+/* Carte score / proba */
+.kpi-card {
+    background: #111318; border: 1px solid #1E2028;
+    border-radius: 12px; padding: 1.25rem 1rem;
+    text-align: center; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.kpi-label {
+    font-size: 0.65rem; font-weight: 700; color: #686D78;
+    text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.6rem;
+}
+.kpi-value { font-size: 2.8rem; font-weight: 800; line-height: 1; }
+.kpi-sub { font-size: 0.72rem; color: #686D78; margin-top: 4px; }
+.kpi-badge {
+    margin-top: 0.5rem; font-size: 0.7rem; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px;
+}
+.kpi-badge.faible { color: #22C55E; background: #22C55E15; border: 1px solid #22C55E30; }
+.kpi-badge.modere { color: #F59E0B; background: #F59E0B15; border: 1px solid #F59E0B30; }
+.kpi-badge.eleve  { color: #EF4444; background: #EF444415; border: 1px solid #EF444430; }
+
+/* Jauge */
+.gauge-wrap { margin-top: 1.25rem; }
+.gauge-title {
+    font-size: 0.68rem; font-weight: 700; color: #686D78;
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.6rem;
+    display: flex; align-items: center; justify-content: space-between;
+}
+.gauge-track {
+    height: 10px; background: #1E2028; border-radius: 20px; overflow: hidden; position: relative;
+}
+.gauge-fill {
+    height: 100%; border-radius: 20px;
+    transition: width 0.6s cubic-bezier(.4,0,.2,1);
+    position: relative;
+}
+.gauge-fill::after {
+    content: ''; position: absolute; right: 0; top: 0;
+    width: 4px; height: 100%;
+    background: rgba(255,255,255,0.4); border-radius: 0 20px 20px 0;
+}
+.gauge-ticks {
+    display: flex; justify-content: space-between;
+    margin-top: 5px; padding: 0 2px;
+}
+.gauge-tick { font-size: 0.62rem; color: #3A3F4A; }
+.gauge-tick.active { color: #686D78; }
+
+/* Récapitulatif */
+.recap-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.5rem 0; border-bottom: 1px solid #1E2028;
+}
+.recap-row:last-child { border-bottom: none; }
+.recap-key { font-size: 0.78rem; color: #686D78; font-weight: 500; }
+.recap-val { font-size: 0.78rem; color: #C8CDD6; font-weight: 600; }
+
+/* Footer */
+.app-footer {
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    padding: 1rem 0 0.5rem;
+    border-top: 1px solid #1E2028;
+    margin-top: 1.5rem;
+}
+.footer-text { font-size: 0.72rem; color: #3A3F4A; }
+.footer-sep { color: #1E2028; }
+
+/* Expander dark */
+[data-testid="stExpander"] {
+    background: #111318 !important; border: 1px solid #1E2028 !important;
+    border-radius: 10px !important;
+}
+[data-testid="stExpander"] summary { color: #8B909A !important; font-size: 0.82rem !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0D0F12; }
+::-webkit-scrollbar-thumb { background: #252830; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #C8922A55; }
+
+/* Cacher le label vide de la colonne d'identification */
+.id-row [data-testid="stTextInput"] { margin-bottom: 0; }
 </style>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
-# CHARGEMENT DU MODÈLE
-# ─────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════
+#  SVG ICONS
+# ═══════════════════════════════════════════════════════════
+def icon_bank():
+    return """<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/>
+  <line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/>
+  <line x1="18" y1="18" x2="18" y2="11"/>
+  <polygon points="12 2 20 7 4 7"/></svg>"""
+
+def icon_chart():
+    return """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+  <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>"""
+
+def icon_target():
+    return """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>"""
+
+def icon_zap():
+    return """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>"""
+
+def icon_award():
+    return """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>"""
+
+def icon_user():
+    return """<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+  <circle cx="12" cy="7" r="4"/></svg>"""
+
+def icon_money():
+    return """<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="2" y="5" width="20" height="14" rx="2"/>
+  <line x1="2" y1="10" x2="22" y2="10"/></svg>"""
+
+def icon_briefcase():
+    return """<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="2" y="7" width="20" height="14" rx="2"/>
+  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+  <line x1="2" y1="12" x2="22" y2="12"/></svg>"""
+
+def icon_history():
+    return """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <polyline points="1 4 1 10 7 10"/>
+  <path d="M3.51 15a9 9 0 1 0 .49-4.54"/></svg>"""
+
+def icon_info():
+    return """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="10"/>
+  <line x1="12" y1="16" x2="12" y2="12"/>
+  <line x1="12" y1="8" x2="12.01" y2="8"/></svg>"""
+
+# ═══════════════════════════════════════════════════════════
+#  CHARGEMENT MODÈLE
+# ═══════════════════════════════════════════════════════════
 @st.cache_resource
 def load_model():
-    """Charge le modèle depuis le fichier .pkl (mis en cache)."""
-    model_path = "credit_scoring_model.pkl"
-    if not os.path.exists(model_path):
+    path = "credit_scoring_model.pkl"
+    if not os.path.exists(path):
         return None
-    return joblib.load(model_path)
+    return joblib.load(path)
 
 model_data = load_model()
 
-# ─────────────────────────────────────────────
-# INITIALISATION SESSION STATE
-# ─────────────────────────────────────────────
 if "historique" not in st.session_state:
     st.session_state.historique = []
 
-# ─────────────────────────────────────────────
-# EN-TÊTE
-# ─────────────────────────────────────────────
-st.markdown("""
-<div class="main-header">
-    <h1>🏦 Système de Scoring Crédit</h1>
-    <p>MBA1 Finance Digitale — ISM Dakar | Modèle de Régression Logistique (AUC ≈ 0.9999)</p>
+# ═══════════════════════════════════════════════════════════
+#  SIDEBAR
+# ═══════════════════════════════════════════════════════════
+with st.sidebar:
+    # — Brand —
+    st.markdown(f"""
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-logo">
+            {icon_bank()}
+            <div class="sidebar-brand-title">CreditScore Pro</div>
+        </div>
+        <div class="sidebar-brand-sub">ISM Dakar · MBA1 Finance Digitale</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if model_data:
+        m = model_data["metrics"]
+
+        # — Performance —
+        st.markdown(f"""
+        <div class="sb-section">
+            <div class="sb-section-label">{icon_chart()} Performance</div>
+            <div class="sb-metric">
+                <div class="sb-metric-label">{icon_target()} AUC-ROC</div>
+                <div>
+                    <span class="sb-metric-value good">{m['auc']:.4f}</span>
+                    <span class="sb-metric-badge">TOP</span>
+                </div>
+            </div>
+            <div class="sb-metric">
+                <div class="sb-metric-label">{icon_zap()} Rappel Défaut</div>
+                <span class="sb-metric-value">{m['recall']:.4f}</span>
+            </div>
+            <div class="sb-metric">
+                <div class="sb-metric-label">{icon_award()} Précision</div>
+                <span class="sb-metric-value">{m['precision']:.4f}</span>
+            </div>
+            <div class="sb-metric">
+                <div class="sb-metric-label">{icon_chart()} F1-Score</div>
+                <span class="sb-metric-value">{m['f1']:.4f}</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # — Légende scores —
+        st.markdown(f"""
+        <div class="sb-section">
+            <div class="sb-section-label">{icon_info()} Grille des Scores</div>
+            <div class="sb-legend-item">
+                <div class="sb-legend-dot" style="background:#22C55E;"></div>
+                <span>Risque Faible</span>
+                <span class="sb-legend-range">700 – 1000</span>
+            </div>
+            <div class="sb-legend-item">
+                <div class="sb-legend-dot" style="background:#F59E0B;"></div>
+                <span>Risque Modéré</span>
+                <span class="sb-legend-range">400 – 699</span>
+            </div>
+            <div class="sb-legend-item">
+                <div class="sb-legend-dot" style="background:#EF4444;"></div>
+                <span>Risque Élevé</span>
+                <span class="sb-legend-range">0 – 399</span>
+            </div>
+            <div style="margin-top:0.7rem; padding-top:0.7rem; border-top:1px solid #1E2028;">
+                <div style="font-size:0.72rem; color:#686D78; line-height:1.5;">
+                    <span style="color:#C8922A; font-weight:600;">Seuil décision :</span> 50% de probabilité de défaut.<br>
+                    Au-delà → Crédit <span style="color:#EF4444; font-weight:600;">Refusé</span>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # — Historique —
+    st.markdown(f"""
+    <div class="sb-section">
+        <div class="sb-section-label">{icon_history()} Historique Session</div>
+    """, unsafe_allow_html=True)
+
+    if not st.session_state.historique:
+        st.markdown('<div style="font-size:0.75rem; color:#3A3F4A; padding:0.3rem 0 0.8rem;">Aucune analyse effectuée.</div>', unsafe_allow_html=True)
+    else:
+        for h in reversed(st.session_state.historique[-8:]):
+            dot_color = "#22C55E" if h["decision"] == "Accordé" else "#EF4444"
+            score_color = "#22C55E" if h["score"] >= 700 else ("#F59E0B" if h["score"] >= 400 else "#EF4444")
+            st.markdown(f"""
+            <div class="sb-hist-item">
+                <div class="sb-hist-dot" style="background:{dot_color};"></div>
+                <div style="flex:1; min-width:0;">
+                    <div class="sb-hist-name">{h['nom']}</div>
+                    <div class="sb-hist-proba">{h['proba']:.1f}% défaut</div>
+                </div>
+                <div class="sb-hist-score" style="color:{score_color};">{h['score']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+        if st.button("Effacer l'historique", key="clear_hist"):
+            st.session_state.historique = []
+            st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+# ═══════════════════════════════════════════════════════════
+#  VÉRIFICATION MODÈLE
+# ═══════════════════════════════════════════════════════════
+if model_data is None:
+    st.error("**Modèle introuvable** — Lancez d'abord `python train_model.py`")
+    st.stop()
+
+pipeline             = model_data["pipeline"]
+numerical_features   = model_data["numerical_features"]
+categorical_features = model_data["categorical_features"]
+all_features         = model_data["all_features"]
+
+# ═══════════════════════════════════════════════════════════
+#  TOPBAR
+# ═══════════════════════════════════════════════════════════
+st.markdown(f"""
+<div class="topbar">
+    <div class="topbar-left">
+        <div class="topbar-icon">{icon_bank()}</div>
+        <div>
+            <div class="topbar-title">Système d'Analyse de Risque Crédit</div>
+            <div class="topbar-sub">Régression Logistique · Pipeline Scikit-Learn · {len(all_features)} features</div>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <div class="topbar-badge green">● Modèle Actif</div>
+        <div class="topbar-badge">AUC {model_data['metrics']['auc']:.4f}</div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
-# ALERTE SI MODÈLE MANQUANT
-# ─────────────────────────────────────────────
-if model_data is None:
-    st.error("""
-    ⚠️ **Modèle introuvable** — Le fichier `credit_scoring_model.pkl` est absent.
+# ═══════════════════════════════════════════════════════════
+#  FORMULAIRE
+# ═══════════════════════════════════════════════════════════
+with st.form("scoring_form"):
 
-    **Solution :** Exécutez d'abord le script d'entraînement :
-    ```bash
-    python train_model.py
-    ```
-    """)
-    st.stop()
-
-pipeline            = model_data["pipeline"]
-numerical_features  = model_data["numerical_features"]
-categorical_features = model_data["categorical_features"]
-all_features        = model_data["all_features"]
-metrics             = model_data["metrics"]
-
-# ─────────────────────────────────────────────
-# SIDEBAR — À PROPOS DU MODÈLE
-# ─────────────────────────────────────────────
-with st.sidebar:
-    st.markdown('<div class="sidebar-title">📊 Performance du Modèle</div>', unsafe_allow_html=True)
-    st.metric("AUC-ROC",       f"{metrics['auc']:.4f}")
-    st.metric("Rappel (Défaut)", f"{metrics['recall']:.4f}")
-    st.metric("Précision",     f"{metrics['precision']:.4f}")
-    st.metric("F1-Score",      f"{metrics['f1']:.4f}")
-
-    st.markdown("---")
-    st.markdown('<div class="sidebar-title">📖 À Propos</div>', unsafe_allow_html=True)
+    # ── Section 1 : Identification ──
     st.markdown(f"""
-    **Modèle :** Régression Logistique  
-    **Algorithme :** `class_weight='balanced'`  
-    **Features :** {len(all_features)} variables  
-    **Dataset :** {model_data.get('dataset_rows', '900 000'):,} clients  
-    **Prétraitement :** StandardScaler + OneHotEncoder  
+    <div class="section-header">
+        <div class="section-icon blue">{icon_user()}</div>
+        <div class="section-title-text">Identification du Client</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    ---
-    **Interprétation du Score :**
-    - 🟢 **700 – 1000** : Risque faible
-    - 🟡 **400 – 699** : Risque modéré
-    - 🔴 **0 – 399** : Risque élevé
+    nom_client = st.text_input(
+        "Référence Client",
+        value="CLI-2025-001",
+        placeholder="ex. CLI-2025-001",
+        help="Identifiant interne pour l'historique de session"
+    )
 
-    ---
-    **Seuil de décision :** 50%  
-    Au-delà de 50% de probabilité de défaut → Crédit **Refusé**
-    """)
+    st.markdown('<div class="form-divider"></div>', unsafe_allow_html=True)
 
-    st.markdown("---")
-    # Historique des prédictions
-    st.markdown('<div class="sidebar-title">🗂 Historique de Session</div>', unsafe_allow_html=True)
-    if not st.session_state.historique:
-        st.caption("Aucune prédiction encore effectuée.")
-    else:
-        for h in reversed(st.session_state.historique[-10:]):
-            css_class = "history-accord" if h["decision"] == "Accordé" else "history-refuse"
-            icon = "✅" if h["decision"] == "Accordé" else "❌"
-            st.markdown(
-                f'<div class="history-item {css_class}">'
-                f'{icon} <b>{h["nom"]}</b> — Score : <b>{h["score"]}/1000</b><br>'
-                f'<small>Proba défaut : {h["proba"]:.1f}%</small>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-        if st.button("🗑 Effacer l'historique"):
-            st.session_state.historique = []
-            st.rerun()
+    # ── Section 2 : Profil Financier ──
+    st.markdown(f"""
+    <div class="section-header">
+        <div class="section-icon gold">{icon_money()}</div>
+        <div class="section-title-text">Profil Financier & Comportement Bancaire</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
-# FORMULAIRE DE SAISIE — 3 COLONNES
-# ─────────────────────────────────────────────
-st.markdown("### 📝 Informations du Client")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        revenu = st.number_input("Revenu Mensuel (FCFA)", min_value=0, max_value=10_000_000,
+            value=350_000, step=10_000, help="Revenu mensuel brut déclaré")
+        ratio_endettement = st.number_input("Ratio d'Endettement", min_value=0.0, max_value=1.0,
+            value=0.35, step=0.01, format="%.2f", help="Part du revenu consacrée aux remboursements")
+        score_interne = st.number_input("Score Interne Banque", min_value=0, max_value=1000,
+            value=500, step=10, help="Score de risque interne (0 = très risqué, 1000 = excellent)")
+    with c2:
+        nb_incidents = st.number_input("Incidents de Paiement", min_value=0, max_value=50,
+            value=0, step=1, help="Nombre total d'incidents de paiement enregistrés")
+        jours_retard = st.number_input("Retard Maximum (jours)", min_value=0, max_value=365,
+            value=0, step=1, help="Nombre maximal de jours de retard observé")
+        nb_rejets = st.number_input("Rejets de Prélèvement", min_value=0, max_value=50,
+            value=0, step=1, help="Nombre de prélèvements automatiques rejetés")
+    with c3:
+        nb_decouvert = st.number_input("Découverts (12 mois)", min_value=0, max_value=30,
+            value=0, step=1, help="Nombre de fois en découvert sur les 12 derniers mois")
+        anciennete = st.number_input("Ancienneté Client (mois)", min_value=0, max_value=360,
+            value=24, step=1, help="Durée de la relation bancaire en mois")
 
-with st.form("prediction_form"):
-    # — Ligne 1 : Identification —
-    st.markdown('<div class="section-title">🪪 Identification</div>', unsafe_allow_html=True)
-    col_id1, col_id2 = st.columns([1, 3])
-    with col_id1:
-        nom_client = st.text_input("Nom du client (référence)", value="Client_001",
-                                   help="Identifiant interne pour l'historique")
-    st.markdown("---")
+    st.markdown('<div class="form-divider"></div>', unsafe_allow_html=True)
 
-    # — Ligne 2 : Profil financier —
-    st.markdown('<div class="section-title">💰 Profil Financier</div>', unsafe_allow_html=True)
-    col1, col2, col3 = st.columns(3)
+    # ── Section 3 : Profil Pro & Garanties ──
+    st.markdown(f"""
+    <div class="section-header">
+        <div class="section-icon slate">{icon_briefcase()}</div>
+        <div class="section-title-text">Profil Professionnel & Garanties</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    with col1:
-        revenu = st.number_input(
-            "Revenu mensuel (FCFA)",
-            min_value=0, max_value=10_000_000,
-            value=350_000, step=10_000,
-            help="Revenu mensuel brut déclaré du client"
-        )
-        ratio_endettement = st.number_input(
-            "Ratio d'endettement",
-            min_value=0.0, max_value=1.0,
-            value=0.35, step=0.01, format="%.2f",
-            help="Part du revenu mensuel consacrée aux remboursements (0 à 1)"
-        )
-        score_interne = st.number_input(
-            "Score interne banque",
-            min_value=0, max_value=1000,
-            value=500, step=10,
-            help="Score de risque calculé en interne par la banque (0-1000)"
-        )
-
-    with col2:
-        nb_incidents = st.number_input(
-            "Nombre d'incidents de paiement",
-            min_value=0, max_value=50,
-            value=0, step=1,
-            help="Total des incidents de paiement dans l'historique crédit"
-        )
-        jours_retard = st.number_input(
-            "Retard maximum (jours)",
-            min_value=0, max_value=365,
-            value=0, step=1,
-            help="Nombre maximum de jours de retard observé"
-        )
-        nb_rejets = st.number_input(
-            "Rejets de prélèvement",
-            min_value=0, max_value=50,
-            value=0, step=1,
-            help="Nombre de prélèvements automatiques rejetés"
-        )
-
-    with col3:
-        nb_decouvert = st.number_input(
-            "Découverts (12 derniers mois)",
-            min_value=0, max_value=30,
-            value=0, step=1,
-            help="Nombre de fois en découvert au cours des 12 derniers mois"
-        )
-        anciennete = st.number_input(
-            "Ancienneté client (mois)",
-            min_value=0, max_value=360,
-            value=24, step=1,
-            help="Durée de la relation bancaire en mois"
-        )
-
-    st.markdown("---")
-
-    # — Ligne 3 : Informations qualitatives —
-    st.markdown('<div class="section-title">🗂 Profil Professionnel & Garanties</div>',
-                unsafe_allow_html=True)
-    col4, col5 = st.columns(2)
-
-    with col4:
-        type_emploi = st.selectbox(
-            "Type d'emploi",
+    c4, c5 = st.columns(2)
+    with c4:
+        type_emploi = st.selectbox("Type d'Emploi",
             options=["CDI", "Fonctionnaire", "CDD", "Indépendant", "Entrepreneur", "Retraité", "Sans emploi"],
-            index=0,
-            help="Nature du contrat de travail ou statut professionnel"
-        )
-
-    with col5:
-        garantie = st.selectbox(
-            "Type de garantie",
+            help="Statut professionnel du demandeur")
+    with c5:
+        garantie = st.selectbox("Garantie Apportée",
             options=["Hypothèque", "Assurance", "Caution", "Nantissement", "Aucune"],
-            index=0,
-            help="Garantie apportée par le client pour le crédit"
-        )
+            help="Type de garantie présentée pour le crédit")
 
-    st.markdown("---")
+    st.markdown("<br>", unsafe_allow_html=True)
+    submitted = st.form_submit_button(
+        "  ANALYSER LE RISQUE DE CRÉDIT",
+        use_container_width=True
+    )
 
-    # Bouton de prédiction
-    submitted = st.form_submit_button("🔍 Prédire le Risque de Défaut", use_container_width=True)
+# ═══════════════════════════════════════════════════════════
+#  RÉSULTATS
+# ═══════════════════════════════════════════════════════════
+def score_from_proba(p): return int(round((1 - p) * 1000))
 
-# ─────────────────────────────────────────────
-# CALCUL ET AFFICHAGE DE LA PRÉDICTION
-# ─────────────────────────────────────────────
-def calculer_score(proba_defaut: float) -> int:
-    """
-    Convertit la probabilité de défaut en score sur 1000.
-    Score élevé = client fiable (faible risque de défaut).
-    """
-    return int(round((1 - proba_defaut) * 1000))
+def badge_score(s):
+    if s >= 700: return "faible", "Risque Faible"
+    elif s >= 400: return "modere", "Risque Modéré"
+    else: return "eleve", "Risque Élevé"
 
-
-def get_score_color(score: int) -> str:
-    if score >= 700:
-        return "#27AE60"   # Vert
-    elif score >= 400:
-        return "#F39C12"   # Orange
-    else:
-        return "#C0392B"   # Rouge
-
-
-def get_score_label(score: int) -> str:
-    if score >= 700:
-        return "✅ Risque FAIBLE"
-    elif score >= 400:
-        return "⚠️ Risque MODÉRÉ"
-    else:
-        return "❌ Risque ÉLEVÉ"
-
+def gauge_color(s):
+    if s >= 700: return "linear-gradient(90deg, #15803D, #22C55E)"
+    elif s >= 400: return "linear-gradient(90deg, #B45309, #F59E0B)"
+    else: return "linear-gradient(90deg, #991B1B, #EF4444)"
 
 if submitted:
-    # Construction du vecteur d'entrée
-    input_data = pd.DataFrame([{
-        "REVENU_MENSUEL_FCFA":   revenu,
-        "RATIO_ENDETTEMENT":     ratio_endettement,
-        "SCORE_INTERNE_BANQUE":  score_interne,
-        "NB_INCIDENTS_PAIEMENT": nb_incidents,
-        "JOURS_RETARD_MAX":      jours_retard,
-        "NB_REJETS_PRELEVEMENT": nb_rejets,
-        "NB_DECOUVERT_12MOIS":   nb_decouvert,
+    input_df = pd.DataFrame([{
+        "REVENU_MENSUEL_FCFA":    revenu,
+        "RATIO_ENDETTEMENT":      ratio_endettement,
+        "SCORE_INTERNE_BANQUE":   score_interne,
+        "NB_INCIDENTS_PAIEMENT":  nb_incidents,
+        "JOURS_RETARD_MAX":       jours_retard,
+        "NB_REJETS_PRELEVEMENT":  nb_rejets,
+        "NB_DECOUVERT_12MOIS":    nb_decouvert,
         "ANCIENNETE_CLIENT_MOIS": anciennete,
-        "TYPE_EMPLOI":           type_emploi,
-        "GARANTIE":              garantie,
+        "TYPE_EMPLOI":            type_emploi,
+        "GARANTIE":               garantie,
     }])
 
-    # Prédiction
-    proba_defaut = pipeline.predict_proba(input_data)[0][1]
-    decision     = "Refusé" if proba_defaut >= 0.50 else "Accordé"
-    score        = calculer_score(proba_defaut)
+    proba    = pipeline.predict_proba(input_df)[0][1]
+    decision = "Refusé" if proba >= 0.50 else "Accordé"
+    score    = score_from_proba(proba)
+    proba_p  = proba * 100
+    badge_cls, badge_lbl = badge_score(score)
+    g_color  = gauge_color(score)
+    p_color  = "#EF4444" if proba >= 0.5 else "#22C55E"
 
-    # Sauvegarde dans l'historique de session
     st.session_state.historique.append({
-        "nom":      nom_client,
-        "score":    score,
-        "proba":    proba_defaut * 100,
-        "decision": decision,
+        "nom": nom_client, "score": score,
+        "proba": proba_p, "decision": decision,
     })
 
-    # ── Affichage des résultats ──
-    st.markdown("---")
-    st.markdown("### 📊 Résultats de l'Analyse")
-
-    # Colonnes résultat
-    res_col1, res_col2, res_col3 = st.columns([1.2, 1, 1])
-
-    # — Décision principale —
-    with res_col1:
-        css_class = "result-accord" if decision == "Accordé" else "result-refuse"
-        icon       = "✅" if decision == "Accordé" else "❌"
-        msg        = ("Dossier favorable — le risque de défaut est acceptable."
-                      if decision == "Accordé"
-                      else "Dossier défavorable — le risque de défaut est trop élevé.")
-        st.markdown(f"""
-        <div class="{css_class}">
-            <div class="result-title">{icon} Crédit {decision.upper()}</div>
-            <div class="result-sub">{msg}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # — Score sur 1000 —
-    with res_col2:
-        color = get_score_color(score)
-        label = get_score_label(score)
-        st.markdown(f"""
-        <div style="text-align:center; padding: 1rem; background:#FFF8EC;
-                    border:2px solid #C8922A; border-radius:12px;">
-            <div style="font-size:0.85rem; color:#5C2E00; font-weight:600;
-                        text-transform:uppercase; letter-spacing:1px; margin-bottom:0.5rem;">
-                Score de Risque
-            </div>
-            <div style="font-size:3rem; font-weight:800; color:{color}; line-height:1;">
-                {score}
-            </div>
-            <div style="font-size:0.8rem; color:#888; margin-top:2px;">/ 1000</div>
-            <div style="margin-top:0.5rem; font-size:0.9rem; font-weight:600; color:{color};">
-                {label}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # — Probabilité de défaut —
-    with res_col3:
-        proba_pct = proba_defaut * 100
-        bar_color = "#C0392B" if proba_defaut >= 0.5 else "#27AE60"
-        st.markdown(f"""
-        <div style="text-align:center; padding: 1rem; background:#FFF8EC;
-                    border:2px solid #C8922A; border-radius:12px;">
-            <div style="font-size:0.85rem; color:#5C2E00; font-weight:600;
-                        text-transform:uppercase; letter-spacing:1px; margin-bottom:0.5rem;">
-                Probabilité de Défaut
-            </div>
-            <div style="font-size:3rem; font-weight:800; color:{bar_color}; line-height:1;">
-                {proba_pct:.1f}%
-            </div>
-            <div style="font-size:0.8rem; color:#888; margin-top:2px;">seuil : 50%</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # — Jauge visuelle (barre de progression) —
+    # ── Ligne de résultats ──
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("**Jauge de Risque — Score sur 1000**")
-    bar_pct = score / 10  # pourcentage pour la barre
 
-    # Couleur progressive selon le score
-    if score >= 700:
-        jauge_color = "#27AE60"
-        zone = "🟢 Zone verte — Profil fiable"
-    elif score >= 400:
-        jauge_color = "#F39C12"
-        zone = "🟡 Zone orange — Profil à surveiller"
-    else:
-        jauge_color = "#C0392B"
-        zone = "🔴 Zone rouge — Profil risqué"
+    r1, r2, r3 = st.columns([1.1, 0.95, 0.95])
 
+    with r1:
+        is_ok = decision == "Accordé"
+        banner_cls = "accord" if is_ok else "refuse"
+        d_icon = "✓" if is_ok else "✕"
+        d_label = "DÉCISION CRÉDIT"
+        d_msg = ("Dossier validé — le profil de risque est acceptable." if is_ok
+                 else "Dossier refusé — risque de défaut trop élevé.")
+        st.markdown(f"""
+        <div class="result-banner {banner_cls}">
+            <div class="result-icon">{d_icon}</div>
+            <div class="result-label {banner_cls}">{d_label}</div>
+            <div class="result-decision {banner_cls}">Crédit {decision.upper()}</div>
+            <div class="result-msg {banner_cls}">{d_msg}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with r2:
+        st.markdown(f"""
+        <div class="kpi-card">
+            <div class="kpi-label">Score de Risque</div>
+            <div class="kpi-value" style="color:{p_color if score < 400 else ('#F59E0B' if score < 700 else '#22C55E')};">{score}</div>
+            <div class="kpi-sub">sur 1 000 points</div>
+            <div class="kpi-badge {badge_cls}">{badge_lbl}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with r3:
+        st.markdown(f"""
+        <div class="kpi-card">
+            <div class="kpi-label">Probabilité de Défaut</div>
+            <div class="kpi-value" style="color:{p_color};">{proba_p:.1f}<span style="font-size:1.4rem;">%</span></div>
+            <div class="kpi-sub">seuil de décision : 50%</div>
+            <div class="kpi-badge {'eleve' if proba >= 0.5 else 'faible'}">{'Au-dessus' if proba >= 0.5 else 'En-dessous'} du seuil</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── Jauge ──
+    bar_w = score / 10
     st.markdown(f"""
-    <div style="background:#E8E8E8; border-radius:20px; height:28px; overflow:hidden;
-                border:1px solid #CCC;">
-        <div style="width:{bar_pct}%; background:linear-gradient(90deg, {jauge_color}, {jauge_color}CC);
-                    height:100%; border-radius:20px; display:flex; align-items:center;
-                    justify-content:center; transition:width 0.5s ease;">
-            <span style="color:white; font-weight:700; font-size:0.9rem;">{score} / 1000</span>
+    <div class="gauge-wrap">
+        <div class="gauge-title">
+            <span>Jauge de Risque — Score sur 1000</span>
+            <span style="color:#C8CDD6; font-weight:700;">{score} / 1000</span>
+        </div>
+        <div class="gauge-track">
+            <div class="gauge-fill" style="width:{bar_w}%; background:{g_color};"></div>
+        </div>
+        <div class="gauge-ticks">
+            <span class="gauge-tick">0</span>
+            <span class="gauge-tick {'active' if score >= 400 else ''}">▲ 400</span>
+            <span class="gauge-tick {'active' if score >= 700 else ''}">▲ 700</span>
+            <span class="gauge-tick active">1000</span>
         </div>
     </div>
-    <div style="margin-top:0.4rem; font-size:0.9rem; color:#555;">{zone}</div>
     """, unsafe_allow_html=True)
 
-    # — Repères de la jauge —
-    st.markdown("""
-    <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#888;
-                margin-top:2px; padding:0 2px;">
-        <span>0 — Très risqué</span>
-        <span>400 — Seuil modéré</span>
-        <span>700 — Seuil fiable</span>
-        <span>1000 — Excellent</span>
-    </div>
-    """, unsafe_allow_html=True)
+    # ── Récapitulatif ──
+    st.markdown("<br>", unsafe_allow_html=True)
+    with st.expander("Récapitulatif des données saisies", expanded=False):
+        rows = [
+            ("Référence client",      nom_client),
+            ("Revenu mensuel",        f"{revenu:,} FCFA"),
+            ("Ratio d'endettement",   f"{ratio_endettement:.2f}  ({ratio_endettement*100:.0f}%)"),
+            ("Score interne banque",  str(score_interne)),
+            ("Incidents de paiement", str(nb_incidents)),
+            ("Retard maximum",        f"{jours_retard} jours"),
+            ("Rejets prélèvement",    str(nb_rejets)),
+            ("Découverts (12 mois)",  str(nb_decouvert)),
+            ("Ancienneté client",     f"{anciennete} mois"),
+            ("Type d'emploi",         type_emploi),
+            ("Garantie",              garantie),
+        ]
+        html = ""
+        for k, v in rows:
+            html += f'<div class="recap-row"><span class="recap-key">{k}</span><span class="recap-val">{v}</span></div>'
+        st.markdown(f'<div style="background:#111318;border:1px solid #1E2028;border-radius:10px;padding:0.75rem 1rem;">{html}</div>', unsafe_allow_html=True)
 
-    # — Récapitulatif des données saisies —
-    with st.expander("🔎 Récapitulatif des données saisies", expanded=False):
-        recap_df = pd.DataFrame({
-            "Variable": [
-                "Revenu mensuel",
-                "Ratio d'endettement",
-                "Score interne banque",
-                "Incidents de paiement",
-                "Retard maximum (jours)",
-                "Rejets de prélèvement",
-                "Découverts (12 mois)",
-                "Ancienneté client (mois)",
-                "Type d'emploi",
-                "Garantie",
-            ],
-            "Valeur saisie": [
-                f"{revenu:,} FCFA",
-                f"{ratio_endettement:.2f} ({ratio_endettement*100:.0f}%)",
-                str(score_interne),
-                str(nb_incidents),
-                f"{jours_retard} jours",
-                str(nb_rejets),
-                str(nb_decouvert),
-                f"{anciennete} mois",
-                type_emploi,
-                garantie,
-            ],
-        })
-        st.dataframe(recap_df, use_container_width=True, hide_index=True)
-
-# ─────────────────────────────────────────────
-# PIED DE PAGE
-# ─────────────────────────────────────────────
-st.markdown("---")
+# ── Footer ──
 st.markdown("""
-<div style="text-align:center; color:#999; font-size:0.8rem; padding:0.5rem;">
-    🏫 <b>ISM Dakar</b> — MBA1 Finance Digitale 2025-2026
-    &nbsp;|&nbsp; Projet de Modélisation Prédictive
-    &nbsp;|&nbsp; Prof. M. Komla Martin CHOKKI
-    <br><i>⚠️ Outil d'aide à la décision — Ne remplace pas le jugement du conseiller bancaire.</i>
+<div class="app-footer">
+    <span class="footer-text">ISM Dakar · MBA1 Finance Digitale 2025-2026</span>
+    <span class="footer-sep">|</span>
+    <span class="footer-text">Prof. M. Komla Martin CHOKKI</span>
+    <span class="footer-sep">|</span>
+    <span class="footer-text">Outil d'aide à la décision — usage professionnel uniquement</span>
 </div>
 """, unsafe_allow_html=True)
