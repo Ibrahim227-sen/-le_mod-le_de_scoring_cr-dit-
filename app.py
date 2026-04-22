@@ -218,70 +218,142 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
     background: #C8922A22 !important; color: #C8922A !important;
     border-color: #C8922A66 !important;
 }
-/* ── Selectbox — fix complet BaseWeb ── */
+/* ══════════════════════════════════
+   SELECTBOX — Solution définitive
+   Streamlit injecte les styles inline
+   via BaseWeb, donc on cible tout
+══════════════════════════════════ */
 
-/* Conteneur principal du select */
-[data-testid="stSelectbox"] > div > div {
-    padding: 0.5rem 0.75rem !important;
-    background: #161920 !important;
-    border: 1px solid #252830 !important;
-    border-radius: 8px !important;
-}
-
-/* Texte affiché dans le select (valeur sélectionnée) */
-[data-testid="stSelectbox"] [data-baseweb="select"] > div,
-[data-testid="stSelectbox"] [data-baseweb="select"] > div > div,
-[data-testid="stSelectbox"] [data-baseweb="select"] span,
-[data-testid="stSelectbox"] div[class*="ValueContainer"] div,
-[data-testid="stSelectbox"] div[class*="SingleValue"],
-[data-testid="stSelectbox"] div[class*="Placeholder"] {
+/* Wrapper global: force couleur sur tous descendants */
+[data-testid="stSelectbox"] * {
     color: #E8E9EC !important;
-    background: transparent !important;
 }
 
-/* Icône chevron */
-[data-testid="stSelectbox"] svg { color: #8B909A !important; fill: #8B909A !important; }
-
-/* Fond du conteneur BaseWeb select */
-[data-baseweb="select"] > div:first-child {
-    background: #161920 !important;
-    border-color: #252830 !important;
+/* Le bouton trigger (rectangle visible) */
+[data-testid="stSelectbox"] > div > div,
+[data-testid="stSelectbox"] > div > div > div,
+[data-baseweb="select"] > div {
+    background-color: #161920 !important;
+    border-color: #2A2D38 !important;
     border-radius: 8px !important;
+    color: #E8E9EC !important;
 }
-[data-baseweb="select"] > div:first-child:hover {
+
+/* Fond transparent pour les enfants directs du trigger */
+[data-baseweb="select"] > div > div {
+    background-color: transparent !important;
+    color: #E8E9EC !important;
+}
+
+/* Hover */
+[data-baseweb="select"] > div:hover {
     border-color: #C8922A66 !important;
 }
 
-/* Dropdown ouvert — liste d'options */
-[data-baseweb="popover"] {
-    background: #161920 !important;
-    border: 1px solid #252830 !important;
-    border-radius: 8px !important;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important;
+/* Icône chevron */
+[data-testid="stSelectbox"] svg {
+    fill: #8B909A !important;
+    color: #8B909A !important;
 }
-[data-baseweb="menu"] {
-    background: #161920 !important;
+
+/* ── Dropdown list ── */
+[data-baseweb="popover"],
+[data-baseweb="popover"] > div {
+    background-color: #1C1F27 !important;
+    border: 1px solid #2A2D38 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.8) !important;
 }
-[data-baseweb="menu"] ul { background: #161920 !important; }
-[data-baseweb="menu"] li,
-[data-baseweb="option"] {
-    background: #161920 !important;
+
+/* Liste */
+[data-baseweb="menu"],
+[data-baseweb="menu"] > ul,
+[data-baseweb="menu"] > div {
+    background-color: #1C1F27 !important;
     color: #C8CDD6 !important;
-    font-size: 0.85rem !important;
-    font-family: 'Inter', sans-serif !important;
 }
-[data-baseweb="menu"] li:hover,
-[data-baseweb="option"]:hover {
-    background: #C8922A18 !important;
+
+/* Chaque item */
+[data-baseweb="menu"] li {
+    background-color: #1C1F27 !important;
+    color: #C8CDD6 !important;
+    border-radius: 6px !important;
+    margin: 2px 4px !important;
+}
+[data-baseweb="menu"] li * {
+    color: #C8CDD6 !important;
+    background-color: transparent !important;
+}
+[data-baseweb="menu"] li:hover {
+    background-color: #C8922A22 !important;
     color: #E8E9EC !important;
 }
-/* Option sélectionnée dans la liste */
+[data-baseweb="menu"] li:hover * {
+    color: #E8E9EC !important;
+}
+
+/* Item sélectionné */
+[data-baseweb="menu"] li[aria-selected="true"],
 [aria-selected="true"] {
-    background: #C8922A22 !important;
+    background-color: #C8922A25 !important;
+    color: #C8922A !important;
+    font-weight: 600 !important;
+}
+[aria-selected="true"] * {
     color: #C8922A !important;
 }
 
 [data-testid="stTooltipIcon"] { color: #686D78 !important; }
+
+/* ══════════════════════════════════
+   RADIO BUTTONS — Style pill/tag
+══════════════════════════════════ */
+[data-testid="stRadio"] > div {
+    gap: 4px !important;
+    flex-direction: column !important;
+}
+[data-testid="stRadio"] label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 7px 12px !important;
+    border-radius: 7px !important;
+    border: 1px solid #1E2028 !important;
+    background: #161920 !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    font-size: 0.84rem !important;
+    font-weight: 500 !important;
+    color: #C8CDD6 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    margin-bottom: 3px !important;
+    width: 100% !important;
+}
+[data-testid="stRadio"] label:hover {
+    border-color: #C8922A55 !important;
+    background: #1E2028 !important;
+    color: #E8E9EC !important;
+}
+/* Radio circle */
+[data-testid="stRadio"] input[type="radio"] {
+    accent-color: #C8922A !important;
+    width: 14px !important;
+    height: 14px !important;
+    flex-shrink: 0 !important;
+}
+/* Selected label */
+[data-testid="stRadio"] label:has(input:checked) {
+    border-color: #C8922A66 !important;
+    background: #C8922A15 !important;
+    color: #C8922A !important;
+    font-weight: 600 !important;
+}
+[data-testid="stRadio"] p {
+    color: inherit !important;
+    font-size: 0.84rem !important;
+    margin: 0 !important;
+}
 
 /* ══════════════════════════════════
    BOUTON PRÉDIRE
@@ -695,13 +767,23 @@ with st.form("scoring_form"):
 
     c4, c5 = st.columns(2)
     with c4:
-        type_emploi = st.selectbox("Type d'Emploi",
+        st.markdown("<p style='font-size:0.78rem;font-weight:600;color:#8B909A;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;'>TYPE D'EMPLOI</p>", unsafe_allow_html=True)
+        type_emploi = st.radio(
+            "type_emploi",
             options=["CDI", "Fonctionnaire", "CDD", "Indépendant", "Entrepreneur", "Retraité", "Sans emploi"],
-            help="Statut professionnel du demandeur")
+            horizontal=False,
+            label_visibility="collapsed",
+            key="type_emploi_radio"
+        )
     with c5:
-        garantie = st.selectbox("Garantie Apportée",
+        st.markdown('<p style="font-size:0.78rem;font-weight:600;color:#8B909A;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;">Garantie Apportée</p>', unsafe_allow_html=True)
+        garantie = st.radio(
+            "Garantie Apportée",
             options=["Hypothèque", "Assurance", "Caution", "Nantissement", "Aucune"],
-            help="Type de garantie présentée pour le crédit")
+            horizontal=False,
+            label_visibility="collapsed",
+            key="garantie_radio"
+        )
 
     st.markdown("<br>", unsafe_allow_html=True)
     submitted = st.form_submit_button(
