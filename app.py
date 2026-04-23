@@ -596,8 +596,7 @@ model_data = load_model()
 
 if "historique" not in st.session_state:
     st.session_state.historique = []
-if "show_perf_modal" not in st.session_state:
-    st.session_state.show_perf_modal = False
+
 
 # ═══════════════════════════════════════════════════════════
 #  SIDEBAR
@@ -715,32 +714,113 @@ all_features         = model_data["all_features"]
 THRESHOLD            = model_data.get("threshold", 0.76)  # Seuil optimisé
 
 # ═══════════════════════════════════════════════════════════
-#  TOPBAR + MODALE PERFORMANCES
+#  TOPBAR + MODALE PERFORMANCES  (st.dialog — Streamlit ≥ 1.32)
 # ═══════════════════════════════════════════════════════════
-# CSS bouton topbar performances
+
+@st.dialog("Performances du Modèle", width="large")
+def show_perf_dialog():
+    m = model_data["metrics"]
+    st.markdown(f"""
+<style>
+/* Styles internes à la dialog Streamlit */
+[data-testid="stDialog"] {{
+    background: transparent !important;
+}}
+[data-testid="stDialog"] > div {{
+    background: linear-gradient(145deg,#13151C,#0e1018) !important;
+    border: 1px solid rgba(200,146,42,0.3) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 25px 70px rgba(0,0,0,0.8) !important;
+}}
+</style>
+
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;
+            padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.06);">
+  <div style="width:40px;height:40px;border-radius:10px;
+              background:linear-gradient(135deg,#1a2e1a,#0d1f0d);
+              border:1px solid rgba(34,197,94,0.3);
+              display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+    </svg>
+  </div>
+  <div>
+    <div style="font-size:0.72rem;color:#4B5261;margin-top:2px;">
+      Régression Logistique · Pipeline Scikit-Learn · Évaluation sur jeu de test
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+
+  <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.18);border-radius:12px;padding:16px;">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2.5">
+        <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+      </svg>
+      <span style="font-size:0.62rem;color:#4B5261;text-transform:uppercase;letter-spacing:1px;font-weight:700;">AUC-ROC</span>
+    </div>
+    <div style="font-size:1.8rem;font-weight:800;color:#22C55E;letter-spacing:-1px;line-height:1;">{m['auc']:.4f}</div>
+    <div style="font-size:0.64rem;color:#22C55E;opacity:0.7;margin-top:5px;">Excellent pouvoir discriminant</div>
+  </div>
+
+  <div style="background:rgba(200,146,42,0.06);border:1px solid rgba(200,146,42,0.18);border-radius:12px;padding:16px;">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="2.5">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+      <span style="font-size:0.62rem;color:#4B5261;text-transform:uppercase;letter-spacing:1px;font-weight:700;">F1-Score</span>
+    </div>
+    <div style="font-size:1.8rem;font-weight:800;color:#C8922A;letter-spacing:-1px;line-height:1;">{m['f1']:.4f}</div>
+    <div style="font-size:0.64rem;color:#C8922A;opacity:0.7;margin-top:5px;">Équilibre précision / rappel</div>
+  </div>
+
+  <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:16px;">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.5">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <span style="font-size:0.62rem;color:#4B5261;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Précision</span>
+    </div>
+    <div style="font-size:1.8rem;font-weight:800;color:#3B82F6;letter-spacing:-1px;line-height:1;">{m['precision']:.4f}</div>
+    <div style="font-size:0.64rem;color:#3B82F6;opacity:0.7;margin-top:5px;">Vrais positifs / prédits positifs</div>
+  </div>
+
+  <div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.18);border-radius:12px;padding:16px;">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2.5">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <span style="font-size:0.62rem;color:#4B5261;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Rappel Défaut</span>
+    </div>
+    <div style="font-size:1.8rem;font-weight:800;color:#A855F7;letter-spacing:-1px;line-height:1;">{m['recall']:.4f}</div>
+    <div style="font-size:0.64rem;color:#A855F7;opacity:0.7;margin-top:5px;">Détection des mauvais payeurs</div>
+  </div>
+</div>
+
+<div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);
+            border-radius:12px;padding:13px 16px;
+            display:flex;align-items:center;justify-content:space-between;">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2">
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    <span style="font-size:0.77rem;color:#9CA3AF;">Seuil de décision optimisé</span>
+  </div>
+  <div style="font-size:0.92rem;font-weight:800;color:#EF4444;">{THRESHOLD*100:.0f}% <span style="font-size:0.68rem;font-weight:500;color:#6B7280;">probabilité de défaut</span></div>
+</div>
+
+<div style="margin-top:12px;font-size:0.63rem;color:#2D3244;text-align:center;">
+  ISM Dakar · MBA1 Finance Digitale
+</div>
+    """, unsafe_allow_html=True)
+
+# ─── Topbar ───────────────────────────────────────────────
 st.markdown("""
 <style>
-/* Masquer le bouton sidebar natif Streamlit */
 [data-testid="stSidebarCollapsedControl"] { display:none !important; }
-
-/* Bouton performances dans la topbar */
-.stButton.perf-btn > button {
-    font-size:0.72rem !important; font-weight:700 !important;
-    padding:5px 14px !important; border-radius:20px !important;
-    white-space:nowrap !important; height:auto !important;
-    line-height:1.5 !important; letter-spacing:0.3px !important;
-    color:#22C55E !important;
-    background:linear-gradient(135deg,#0d2918,#0a1f12) !important;
-    border:1px solid #22C55E55 !important;
-    box-shadow:0 0 12px rgba(34,197,94,0.15) !important;
-    transition:all 0.2s !important;
-}
-.stButton.perf-btn > button:hover {
-    background:linear-gradient(135deg,#16392a,#0f2a1a) !important;
-    border-color:#22C55E !important;
-    box-shadow:0 0 20px rgba(34,197,94,0.3) !important;
-    transform:translateY(-1px) !important;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -760,153 +840,17 @@ with _col_left:
     """, unsafe_allow_html=True)
 
 with _col_right:
-    st.markdown('<div class="perf-btn">', unsafe_allow_html=True)
-    if st.button(f"⬤ Modèle Actif  ·  AUC {model_data['metrics']['auc']:.4f}", key="btn_perf_open"):
-        st.session_state.show_perf_modal = True
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# ─── MODALE ───────────────────────────────────────────────
-if st.session_state.show_perf_modal:
-    m = model_data["metrics"]
-
-    # Bouton fermer EN PREMIER (au-dessus de l'overlay dans le DOM)
-    st.markdown("""
-    <style>
-    /* Positionner le bouton fermer en haut à droite de l'écran, au-dessus de tout */
-    div[data-testid="stVerticalBlock"] > div:has(> div[data-testid="stButton"][id="close-btn-wrapper"]) {
-        position:fixed; top:24px; right:32px; z-index:10000000;
+    st.markdown("""<style>
+    section.main > div > div:nth-child(1) > div > div:nth-child(2) button {
+        font-size:0.7rem !important; font-weight:700 !important;
+        padding:5px 12px !important; border-radius:20px !important;
+        color:#22C55E !important; background:#0d2918 !important;
+        border:1px solid #22C55E55 !important;
+        box-shadow:0 0 10px rgba(34,197,94,0.12) !important;
     }
-    #close-btn-wrapper button {
-        background:rgba(255,255,255,0.08) !important;
-        border:1px solid rgba(255,255,255,0.18) !important;
-        color:#E8E9EC !important;
-        border-radius:50% !important;
-        width:40px !important; height:40px !important;
-        font-size:1.2rem !important;
-        padding:0 !important;
-        display:flex !important; align-items:center !important; justify-content:center !important;
-        backdrop-filter:blur(8px);
-        box-shadow:0 4px 16px rgba(0,0,0,0.4) !important;
-        transition:all 0.2s !important;
-    }
-    #close-btn-wrapper button:hover {
-        background:rgba(239,68,68,0.2) !important;
-        border-color:#EF4444 !important;
-        color:#EF4444 !important;
-        transform:scale(1.1) !important;
-    }
-    </style>
-    <div id="close-btn-wrapper">
-    """, unsafe_allow_html=True)
-    if st.button("✕", key="close_perf_modal"):
-        st.session_state.show_perf_modal = False
-        st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # Overlay + carte modale
-    st.markdown(f"""
-    <div style="position:fixed;inset:0;z-index:999990;background:rgba(5,7,12,0.85);
-                backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;">
-      <div style="background:linear-gradient(145deg,#13151C,#0e1018);
-                  border:1px solid rgba(200,146,42,0.3);border-radius:18px;
-                  padding:32px;max-width:540px;width:92%;
-                  box-shadow:0 25px 70px rgba(0,0,0,0.8),0 0 0 1px rgba(255,255,255,0.04);
-                  position:relative;">
-
-        <!-- En-tête -->
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;
-                    padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,0.06);">
-          <div style="width:42px;height:42px;border-radius:10px;
-                      background:linear-gradient(135deg,#1a2e1a,#0d1f0d);
-                      border:1px solid rgba(34,197,94,0.3);
-                      display:flex;align-items:center;justify-content:center;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-          </div>
-          <div>
-            <div style="font-size:1.05rem;font-weight:800;color:#F0F1F3;letter-spacing:-0.3px;">
-              Performances du Modèle
-            </div>
-            <div style="font-size:0.72rem;color:#4B5261;margin-top:2px;">
-              Régression Logistique · Pipeline Scikit-Learn · Évaluation sur jeu de test
-            </div>
-          </div>
-        </div>
-
-        <!-- KPI Grid -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-
-          <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.18);
-                      border-radius:12px;padding:16px;">
-            <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2.5">
-                <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
-              </svg>
-              <span style="font-size:0.63rem;color:#4B5261;text-transform:uppercase;letter-spacing:1px;font-weight:700;">AUC-ROC</span>
-            </div>
-            <div style="font-size:1.8rem;font-weight:800;color:#22C55E;letter-spacing:-1px;line-height:1;">{m['auc']:.4f}</div>
-            <div style="font-size:0.65rem;color:#22C55E;opacity:0.7;margin-top:6px;">Excellent pouvoir discriminant</div>
-          </div>
-
-          <div style="background:rgba(200,146,42,0.06);border:1px solid rgba(200,146,42,0.18);
-                      border-radius:12px;padding:16px;">
-            <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="2.5">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
-              <span style="font-size:0.63rem;color:#4B5261;text-transform:uppercase;letter-spacing:1px;font-weight:700;">F1-Score</span>
-            </div>
-            <div style="font-size:1.8rem;font-weight:800;color:#C8922A;letter-spacing:-1px;line-height:1;">{m['f1']:.4f}</div>
-            <div style="font-size:0.65rem;color:#C8922A;opacity:0.7;margin-top:6px;">Équilibre précision / rappel</div>
-          </div>
-
-          <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);
-                      border-radius:12px;padding:16px;">
-            <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.5">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline points="22 4 12 14.01 9 11.01"/>
-              </svg>
-              <span style="font-size:0.63rem;color:#4B5261;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Précision</span>
-            </div>
-            <div style="font-size:1.8rem;font-weight:800;color:#3B82F6;letter-spacing:-1px;line-height:1;">{m['precision']:.4f}</div>
-            <div style="font-size:0.65rem;color:#3B82F6;opacity:0.7;margin-top:6px;">Vrais positifs / prédits positifs</div>
-          </div>
-
-          <div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.18);
-                      border-radius:12px;padding:16px;">
-            <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2.5">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <span style="font-size:0.63rem;color:#4B5261;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Rappel Défaut</span>
-            </div>
-            <div style="font-size:1.8rem;font-weight:800;color:#A855F7;letter-spacing:-1px;line-height:1;">{m['recall']:.4f}</div>
-            <div style="font-size:0.65rem;color:#A855F7;opacity:0.7;margin-top:6px;">Détection des mauvais payeurs</div>
-          </div>
-        </div>
-
-        <!-- Seuil -->
-        <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);
-                    border-radius:12px;padding:14px 18px;
-                    display:flex;align-items:center;justify-content:space-between;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2">
-              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-            <span style="font-size:0.78rem;color:#9CA3AF;">Seuil de décision optimisé</span>
-          </div>
-          <div style="font-size:0.95rem;font-weight:800;color:#EF4444;">{THRESHOLD*100:.0f}%<span style="font-size:0.7rem;font-weight:500;color:#9CA3AF;"> probabilité de défaut</span></div>
-        </div>
-
-        <div style="margin-top:14px;font-size:0.65rem;color:#2D3244;text-align:center;">
-          ISM Dakar · MBA1 Finance Digitale · Cliquez ✕ en haut à droite pour fermer
-        </div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+    </style>""", unsafe_allow_html=True)
+    if st.button(f"⬤ Modèle Actif · AUC {model_data['metrics']['auc']:.4f}", key="btn_perf_open"):
+        show_perf_dialog()
 
 # ═══════════════════════════════════════════════════════════
 #  FORMULAIRE
