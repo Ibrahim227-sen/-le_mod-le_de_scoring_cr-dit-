@@ -541,6 +541,45 @@ button[data-testid="baseButton-header"] {
 
 /* Cacher le label vide de la colonne d'identification */
 .id-row [data-testid="stTextInput"] { margin-bottom: 0; }
+
+/* ══ Sidebar toggle button — toujours visible ══ */
+[data-testid="stSidebarCollapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 99999 !important;
+    background: #1C1F27 !important;
+    border-radius: 0 8px 8px 0 !important;
+    border: 1px solid #C8922A55 !important;
+    border-left: none !important;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.4) !important;
+}
+[data-testid="stSidebarCollapsedControl"]:hover {
+    background: #C8922A20 !important;
+    border-color: #C8922A !important;
+}
+[data-testid="stSidebarCollapsedControl"] svg {
+    color: #C8922A !important;
+    fill: #C8922A !important;
+}
+[data-testid="stSidebarCollapsedControl"] button {
+    background: transparent !important;
+    border: none !important;
+    color: #C8922A !important;
+}
+/* Bouton fermeture dans sidebar ouverte */
+[data-testid="stSidebar"] [data-testid="stBaseButton-header"],
+[data-testid="stSidebar"] button[aria-label*="sidebar"],
+[data-testid="stSidebar"] button[aria-label*="Sidebar"],
+[data-testid="stSidebar"] .st-emotion-cache-1rtdyuf,
+button[data-testid="stBaseButton-header"] {
+    color: #C8922A !important;
+    background: transparent !important;
+}
+button[data-testid="stBaseButton-header"] svg {
+    fill: #C8922A !important;
+    color: #C8922A !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -601,12 +640,21 @@ def icon_info():
 # ═══════════════════════════════════════════════════════════
 #  CHARGEMENT MODÈLE
 # ═══════════════════════════════════════════════════════════
-@st.cache_resource
+@st.cache_resource(ttl=0)   # ttl=0 = pas de cache persistant entre déploiements
 def load_model():
     path = "credit_scoring_model.pkl"
     if not os.path.exists(path):
         return None
-    return joblib.load(path)
+    data = joblib.load(path)
+    # Garantir que le threshold est présent
+    if "threshold" not in data:
+        data["threshold"] = 0.76
+    return data
+
+# Force rechargement si version du modèle a changé
+if "model_version" not in st.session_state:
+    load_model.clear()
+    st.session_state["model_version"] = "v2_threshold076"
 
 model_data = load_model()
 
@@ -896,7 +944,7 @@ if submitted:
     proba_p  = proba * 100
     badge_cls, badge_lbl = badge_score(score)
     g_color  = gauge_color(score)
-    p_color  = "#EF4444" if proba >= 0.5 else "#22C55E"
+    p_color  = "#EF4444" if proba >= THRESHOLD else "#22C55E"
 
     st.session_state.historique.append({
         "nom": nom_client, "score": score,
