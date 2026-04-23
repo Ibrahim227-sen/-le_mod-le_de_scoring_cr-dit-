@@ -791,51 +791,108 @@ st.markdown(f"""
         </div>
     </div>
     <div class="topbar-right">
-        <div class="topbar-badge green" onclick="document.getElementById('perf-modal').style.display='flex'" style="cursor:pointer;" title="Voir les performances du modèle">● Modèle Actif</div>
-        <div class="topbar-badge" onclick="document.getElementById('perf-modal').style.display='flex'" style="cursor:pointer;" title="Voir les performances du modèle">AUC {model_data['metrics']['auc']:.4f}</div>
+        <div class="topbar-badge green" id="badge-modele-actif" style="cursor:pointer;" title="Voir les performances du modèle">● Modèle Actif</div>
+        <div class="topbar-badge" id="badge-auc" style="cursor:pointer;" title="Voir les performances du modèle">AUC {model_data['metrics']['auc']:.4f}</div>
     </div>
-</div>
-
-<!-- ══════════ MODALE PERFORMANCES ══════════ -->
-<div id="perf-modal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.75); align-items:center; justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
-  <div style="background:#13151C; border:1px solid #C8922A44; border-radius:14px; padding:28px 32px; max-width:520px; width:92%; box-shadow:0 20px 60px rgba(0,0,0,0.7); position:relative;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
-      <div>
-        <div style="font-size:1rem; font-weight:800; color:#E8E9EC;">Performances du Modèle</div>
-        <div style="font-size:0.72rem; color:#686D78; margin-top:3px;">Régression Logistique · Pipeline Scikit-Learn</div>
-      </div>
-      <button onclick="document.getElementById('perf-modal').style.display='none'" style="background:none; border:none; color:#686D78; font-size:1.4rem; cursor:pointer; line-height:1; padding:4px 8px; border-radius:6px;" onmouseover="this.style.color='#E8E9EC'" onmouseout="this.style.color='#686D78'">✕</button>
-    </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
-      <div style="background:#1C1F27; border:1px solid #22C55E33; border-radius:10px; padding:14px 16px;">
-        <div style="font-size:0.68rem; color:#686D78; text-transform:uppercase; letter-spacing:.8px; margin-bottom:6px;">AUC-ROC</div>
-        <div style="font-size:1.55rem; font-weight:800; color:#22C55E;">{model_data['metrics']['auc']:.4f}</div>
-        <div style="font-size:0.65rem; color:#22C55E; margin-top:3px;">Excellent discriminant</div>
-      </div>
-      <div style="background:#1C1F27; border:1px solid #C8922A33; border-radius:10px; padding:14px 16px;">
-        <div style="font-size:0.68rem; color:#686D78; text-transform:uppercase; letter-spacing:.8px; margin-bottom:6px;">F1-Score</div>
-        <div style="font-size:1.55rem; font-weight:800; color:#C8922A;">{model_data['metrics']['f1']:.4f}</div>
-        <div style="font-size:0.65rem; color:#C8922A; margin-top:3px;">Équilibre précision/rappel</div>
-      </div>
-      <div style="background:#1C1F27; border:1px solid #3B82F633; border-radius:10px; padding:14px 16px;">
-        <div style="font-size:0.68rem; color:#686D78; text-transform:uppercase; letter-spacing:.8px; margin-bottom:6px;">Précision</div>
-        <div style="font-size:1.55rem; font-weight:800; color:#3B82F6;">{model_data['metrics']['precision']:.4f}</div>
-        <div style="font-size:0.65rem; color:#3B82F6; margin-top:3px;">Vrais positifs / prédits positifs</div>
-      </div>
-      <div style="background:#1C1F27; border:1px solid #A855F733; border-radius:10px; padding:14px 16px;">
-        <div style="font-size:0.68rem; color:#686D78; text-transform:uppercase; letter-spacing:.8px; margin-bottom:6px;">Rappel Défaut</div>
-        <div style="font-size:1.55rem; font-weight:800; color:#A855F7;">{model_data['metrics']['recall']:.4f}</div>
-        <div style="font-size:0.65rem; color:#A855F7; margin-top:3px;">Détection des mauvais payeurs</div>
-      </div>
-    </div>
-    <div style="background:#1C1F27; border:1px solid #1E2028; border-radius:10px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between;">
-      <div style="font-size:0.78rem; color:#B0B5BE;">Seuil de décision optimisé</div>
-      <div style="font-size:0.92rem; font-weight:700; color:#EF4444;">{THRESHOLD*100:.0f}% probabilité de défaut</div>
-    </div>
-    <div style="margin-top:14px; font-size:0.68rem; color:#3A3F4A; text-align:center;">ISM Dakar · MBA1 Finance Digitale · Cliquez en dehors pour fermer</div>
-  </div>
 </div>
 """, unsafe_allow_html=True)
+
+# ═══════════════════════════════════════════════════════════
+#  MODALE PERFORMANCES — via components.html (JS réellement exécuté)
+# ═══════════════════════════════════════════════════════════
+_auc       = f"{model_data['metrics']['auc']:.4f}"
+_f1        = f"{model_data['metrics']['f1']:.4f}"
+_precision = f"{model_data['metrics']['precision']:.4f}"
+_recall    = f"{model_data['metrics']['recall']:.4f}"
+_threshold = f"{THRESHOLD*100:.0f}"
+
+components.html(f"""
+<script>
+(function() {{
+  // ── Créer la modale dans le document PARENT (Streamlit) ──
+  var doc = window.parent.document;
+
+  // Supprimer ancienne modale si elle existe déjà (rechargement Streamlit)
+  var existing = doc.getElementById("__perf_modal__");
+  if (existing) existing.remove();
+
+  // ── HTML de la modale ──
+  var modal = doc.createElement("div");
+  modal.id = "__perf_modal__";
+  modal.style.cssText = [
+    "display:none","position:fixed","inset:0","z-index:999999",
+    "background:rgba(0,0,0,0.78)","align-items:center","justify-content:center"
+  ].join(";");
+
+  modal.innerHTML = `
+    <div style="background:#13151C;border:1px solid rgba(200,146,42,0.27);border-radius:14px;
+                padding:28px 32px;max-width:520px;width:92%;
+                box-shadow:0 20px 60px rgba(0,0,0,0.7);position:relative;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-size:1rem;font-weight:800;color:#E8E9EC;">Performances du Modèle</div>
+          <div style="font-size:0.72rem;color:#686D78;margin-top:3px;">Régression Logistique · Pipeline Scikit-Learn</div>
+        </div>
+        <button id="__perf_close__"
+          style="background:none;border:none;color:#686D78;font-size:1.4rem;
+                 cursor:pointer;line-height:1;padding:4px 8px;border-radius:6px;">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div style="background:#1C1F27;border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:14px 16px;">
+          <div style="font-size:0.68rem;color:#686D78;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">AUC-ROC</div>
+          <div style="font-size:1.55rem;font-weight:800;color:#22C55E;">{_auc}</div>
+          <div style="font-size:0.65rem;color:#22C55E;margin-top:3px;">Excellent discriminant</div>
+        </div>
+        <div style="background:#1C1F27;border:1px solid rgba(200,146,42,0.2);border-radius:10px;padding:14px 16px;">
+          <div style="font-size:0.68rem;color:#686D78;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">F1-Score</div>
+          <div style="font-size:1.55rem;font-weight:800;color:#C8922A;">{_f1}</div>
+          <div style="font-size:0.65rem;color:#C8922A;margin-top:3px;">Équilibre précision/rappel</div>
+        </div>
+        <div style="background:#1C1F27;border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:14px 16px;">
+          <div style="font-size:0.68rem;color:#686D78;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">Précision</div>
+          <div style="font-size:1.55rem;font-weight:800;color:#3B82F6;">{_precision}</div>
+          <div style="font-size:0.65rem;color:#3B82F6;margin-top:3px;">Vrais positifs / prédits positifs</div>
+        </div>
+        <div style="background:#1C1F27;border:1px solid rgba(168,85,247,0.2);border-radius:10px;padding:14px 16px;">
+          <div style="font-size:0.68rem;color:#686D78;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">Rappel Défaut</div>
+          <div style="font-size:1.55rem;font-weight:800;color:#A855F7;">{_recall}</div>
+          <div style="font-size:0.65rem;color:#A855F7;margin-top:3px;">Détection des mauvais payeurs</div>
+        </div>
+      </div>
+      <div style="background:#1C1F27;border:1px solid #1E2028;border-radius:10px;
+                  padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:0.78rem;color:#B0B5BE;">Seuil de décision optimisé</div>
+        <div style="font-size:0.92rem;font-weight:700;color:#EF4444;">{_threshold}% probabilité de défaut</div>
+      </div>
+      <div style="margin-top:14px;font-size:0.68rem;color:#3A3F4A;text-align:center;">
+        ISM Dakar · MBA1 Finance Digitale · Cliquez en dehors pour fermer
+      </div>
+    </div>`;
+
+  doc.body.appendChild(modal);
+
+  // ── Fonctions open / close ──
+  function openModal()  {{ modal.style.display = "flex"; }}
+  function closeModal() {{ modal.style.display = "none"; }}
+
+  // Fermer en cliquant sur le fond
+  modal.addEventListener("click", function(e) {{ if (e.target === modal) closeModal(); }});
+
+  // Bouton ✕
+  doc.getElementById("__perf_close__").addEventListener("click", closeModal);
+
+  // ── Brancher les badges dans le DOM parent ──
+  function attachBadges() {{
+    var b1 = doc.getElementById("badge-modele-actif");
+    var b2 = doc.getElementById("badge-auc");
+    if (b1) {{ b1.addEventListener("click", openModal); b1.style.cursor = "pointer"; }}
+    if (b2) {{ b2.addEventListener("click", openModal); b2.style.cursor = "pointer"; }}
+    if (!b1 || !b2) setTimeout(attachBadges, 200);
+  }}
+  attachBadges();
+}})();
+</script>
+""", height=0, scrolling=False)
 
 # ═══════════════════════════════════════════════════════════
 #  FORMULAIRE
