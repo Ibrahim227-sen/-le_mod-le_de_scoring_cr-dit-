@@ -44,6 +44,38 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
 }
 [data-testid="stSidebar"] > div:first-child { padding: 0 !important; }
 
+/* ── Bouton collapse/expand — toujours visible ── */
+[data-testid="stSidebarCollapsedControl"] {
+    background: #111318 !important;
+    border: 1px solid #C8922A55 !important;
+    border-radius: 0 8px 8px 0 !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+[data-testid="stSidebarCollapsedControl"]:hover {
+    background: #C8922A22 !important;
+    border-color: #C8922A !important;
+}
+[data-testid="stSidebarCollapsedControl"] svg {
+    color: #C8922A !important;
+    fill: #C8922A !important;
+}
+/* Bouton de fermeture dans la sidebar ouverte */
+[data-testid="stSidebarNavItems"] + div button,
+[data-testid="stSidebar"] button[kind="header"] {
+    color: #C8922A !important;
+    background: transparent !important;
+}
+button[data-testid="baseButton-header"] {
+    color: #C8922A !important;
+}
+/* Assurer que le bouton expand est toujours au-dessus */
+[data-testid="stSidebarCollapsedControl"] {
+    z-index: 999 !important;
+    position: fixed !important;
+}
+
 .sidebar-brand {
     background: linear-gradient(135deg, #1a0a00 0%, #2d1200 100%);
     border-bottom: 1px solid #C8922A33;
@@ -646,7 +678,7 @@ with st.sidebar:
             </div>
             <div style="margin-top:0.7rem; padding-top:0.7rem; border-top:1px solid #1E2028;">
                 <div style="font-size:0.72rem; color:#686D78; line-height:1.5;">
-                    <span style="color:#C8922A; font-weight:600;">Seuil décision :</span> 50% de probabilité de défaut.<br>
+                    <span style="color:#C8922A; font-weight:600;">Seuil décision :</span> 76% de probabilité de défaut.<br>
                     Au-delà → Crédit <span style="color:#EF4444; font-weight:600;">Refusé</span>
                 </div>
             </div>
@@ -694,6 +726,7 @@ pipeline             = model_data["pipeline"]
 numerical_features   = model_data["numerical_features"]
 categorical_features = model_data["categorical_features"]
 all_features         = model_data["all_features"]
+THRESHOLD            = model_data.get("threshold", 0.76)  # Seuil optimisé
 
 # ═══════════════════════════════════════════════════════════
 #  TOPBAR
@@ -858,7 +891,7 @@ if submitted:
     }])
 
     proba    = pipeline.predict_proba(input_df)[0][1]
-    decision = "Refusé" if proba >= 0.50 else "Accordé"
+    decision = "Refusé" if proba >= THRESHOLD else "Accordé"
     score    = score_from_proba(proba)
     proba_p  = proba * 100
     badge_cls, badge_lbl = badge_score(score)
@@ -906,8 +939,8 @@ if submitted:
         <div class="kpi-card">
             <div class="kpi-label">Probabilité de Défaut</div>
             <div class="kpi-value" style="color:{p_color};">{proba_p:.1f}<span style="font-size:1.4rem;">%</span></div>
-            <div class="kpi-sub">seuil de décision : 50%</div>
-            <div class="kpi-badge {'eleve' if proba >= 0.5 else 'faible'}">{'Au-dessus' if proba >= 0.5 else 'En-dessous'} du seuil</div>
+            <div class="kpi-sub">seuil de décision : 76%</div>
+            <div class="kpi-badge {'eleve' if proba >= THRESHOLD else 'faible'}">{'Au-dessus' if proba >= THRESHOLD else 'En-dessous'} du seuil</div>
         </div>
         """, unsafe_allow_html=True)
 
