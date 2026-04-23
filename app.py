@@ -4,6 +4,7 @@ MBA1 Finance Digitale — ISM Dakar 2025-2026
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import joblib
 import os
@@ -519,119 +520,70 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
 # ═══════════════════════════════════════════════════════════
 #  SIDEBAR TOGGLE — FIX JAVASCRIPT
 # ═══════════════════════════════════════════════════════════
-st.markdown("""
+# Sidebar toggle via components.html (seule méthode qui exécute vraiment le JS)
+components.html("""
 <script>
 (function() {
     function fixSidebarToggle() {
-        // Chercher le bouton toggle natif de Streamlit
         var toggleBtn = document.querySelector('[data-testid="stSidebarCollapsedControl"]');
-        var sidebar   = document.querySelector('[data-testid="stSidebar"]');
 
         if (toggleBtn) {
-            // S'assurer qu'il est toujours visible
             toggleBtn.style.cssText = [
-                "display: flex !important",
-                "visibility: visible !important",
-                "opacity: 1 !important",
-                "z-index: 99999 !important",
-                "position: fixed !important",
-                "left: 0",
-                "top: 50%",
-                "transform: translateY(-50%)",
-                "background: #1C1F27",
-                "border: 1px solid #C8922A88",
-                "border-left: none",
-                "border-radius: 0 8px 8px 0",
-                "padding: 8px 6px",
-                "cursor: pointer",
-                "box-shadow: 3px 0 12px rgba(0,0,0,0.5)"
+                "display:flex!important",
+                "visibility:visible!important",
+                "opacity:1!important",
+                "z-index:99999!important",
+                "position:fixed!important",
+                "left:0",
+                "top:50%",
+                "transform:translateY(-50%)",
+                "background:#1C1F27",
+                "border:1px solid #C8922A88",
+                "border-left:none",
+                "border-radius:0 8px 8px 0",
+                "padding:8px 6px",
+                "cursor:pointer",
+                "box-shadow:3px 0 12px rgba(0,0,0,0.5)"
             ].join(";");
-
-            // Colorier le SVG en doré
-            var svgs = toggleBtn.querySelectorAll("svg");
-            svgs.forEach(function(svg) {
-                svg.style.color  = "#C8922A";
-                svg.style.fill   = "#C8922A";
-                svg.style.stroke = "#C8922A";
+            toggleBtn.querySelectorAll("svg").forEach(function(s){
+                s.style.color="#C8922A"; s.style.fill="#C8922A"; s.style.stroke="#C8922A";
             });
         } else {
-            // Le bouton n'existe pas encore — créer un bouton custom
-            var existing = document.getElementById("__custom_sidebar_btn__");
-            if (existing) return;
-
-            var btn = document.createElement("button");
-            btn.id = "__custom_sidebar_btn__";
+            // Créer bouton custom si natif absent
+            if (window.top.document.getElementById("__csb__")) return;
+            var btn = window.top.document.createElement("button");
+            btn.id = "__csb__";
             btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
             btn.style.cssText = [
-                "position: fixed",
-                "left: 0",
-                "top: 50%",
-                "transform: translateY(-50%)",
-                "z-index: 99999",
-                "background: #1C1F27",
-                "border: 1px solid #C8922A88",
-                "border-left: none",
-                "border-radius: 0 8px 8px 0",
-                "padding: 10px 8px",
-                "cursor: pointer",
-                "box-shadow: 3px 0 12px rgba(0,0,0,0.5)",
-                "display: flex",
-                "align-items: center",
-                "justify-content: center"
+                "position:fixed","left:0","top:50%","transform:translateY(-50%)",
+                "z-index:99999","background:#1C1F27",
+                "border:1px solid #C8922A88","border-left:none",
+                "border-radius:0 8px 8px 0","padding:10px 8px","cursor:pointer",
+                "box-shadow:3px 0 12px rgba(0,0,0,0.5)",
+                "display:flex","align-items:center","justify-content:center"
             ].join(";");
-
-            // Cliquer sur le bouton natif caché quand on clique sur le notre
-            btn.addEventListener("click", function() {
-                // Essayer de trouver et cliquer le bouton natif (même s'il est invisible)
-                var nativeBtn = document.querySelector('[data-testid="stSidebarCollapsedControl"] button');
-                if (nativeBtn) {
-                    nativeBtn.click();
-                } else {
-                    // Chercher tout bouton lié à la sidebar
-                    var allBtns = document.querySelectorAll("button");
-                    allBtns.forEach(function(b) {
-                        var label = b.getAttribute("aria-label") || "";
-                        if (label.toLowerCase().includes("sidebar") || label.toLowerCase().includes("navigation")) {
-                            b.click();
-                        }
-                    });
-                }
-            });
-
-            btn.addEventListener("mouseenter", function() {
-                btn.style.background = "#C8922A22";
-                btn.style.borderColor = "#C8922A";
-            });
-            btn.addEventListener("mouseleave", function() {
-                btn.style.background = "#1C1F27";
-                btn.style.borderColor = "#C8922A88";
-            });
-
-            document.body.appendChild(btn);
+            btn.onclick = function() {
+                var nb = window.top.document.querySelector('[data-testid="stSidebarCollapsedControl"] button');
+                if (nb) { nb.click(); return; }
+                window.top.document.querySelectorAll("button").forEach(function(b){
+                    var a = b.getAttribute("aria-label")||"";
+                    if(a.toLowerCase().includes("sidebar")||a.toLowerCase().includes("navigation")) b.click();
+                });
+            };
+            btn.onmouseenter = function(){ btn.style.background="#C8922A22"; btn.style.borderColor="#C8922A"; };
+            btn.onmouseleave = function(){ btn.style.background="#1C1F27";   btn.style.borderColor="#C8922A88"; };
+            window.top.document.body.appendChild(btn);
         }
     }
 
-    // Observer les changements DOM (Streamlit re-render)
-    var observer = new MutationObserver(function(mutations) {
-        fixSidebarToggle();
-    });
-
-    // Lancer dès que le DOM est prêt
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", function() {
-            fixSidebarToggle();
-            observer.observe(document.body, { childList: true, subtree: true });
-        });
-    } else {
-        fixSidebarToggle();
-        observer.observe(document.body, { childList: true, subtree: true });
-    }
-
-    // Relancer toutes les 800ms pour être sûr
-    setInterval(fixSidebarToggle, 800);
+    // Observer DOM parent (Streamlit tourne dans un iframe)
+    var target = window.top ? window.top.document.body : document.body;
+    new MutationObserver(fixSidebarToggle).observe(target, {childList:true, subtree:true});
+    setInterval(fixSidebarToggle, 600);
+    fixSidebarToggle();
 })();
 </script>
-""", unsafe_allow_html=True)
+""", height=0, scrolling=False)
 
 # ═══════════════════════════════════════════════════════════
 #  SVG ICONS
