@@ -1054,25 +1054,29 @@ with tab_importance:
             label = labels_fr.get(row["Variable"], row["Variable"])
             pct   = row["Importance"] / max_imp * 100
             color = colors[i % len(colors)]
-            html_bars += f"""
-            <div style="margin-bottom:14px;">
-              <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
-                <span style="font-size:0.8rem;color:#B0B5BE;font-weight:600;">
-                  <span style="color:{color};margin-right:8px;">#{row['Rang']}</span>{label}
-                </span>
-                <span style="font-size:0.78rem;color:{color};font-weight:700;">{row['Importance']:.4f}</span>
-              </div>
-              <div style="background:#1C1F27;border-radius:6px;height:10px;overflow:hidden;">
-                <div style="height:100%;width:{pct:.1f}%;background:linear-gradient(90deg,{color}cc,{color});
-                            border-radius:6px;transition:width 0.4s ease;"></div>
-              </div>
-            </div>"""
+            rang  = row["Rang"]
+            imp   = row["Importance"]
+            html_bars += (
+                f'<div style="margin-bottom:14px;">'
+                f'<div style="display:flex;justify-content:space-between;margin-bottom:5px;">'
+                f'<span style="font-size:0.8rem;color:#B0B5BE;font-weight:600;">'
+                f'<span style="color:{color};margin-right:8px;">#{rang}</span>{label}'
+                f'</span>'
+                f'<span style="font-size:0.78rem;color:{color};font-weight:700;">{imp:.4f}</span>'
+                f'</div>'
+                f'<div style="background:#1C1F27;border-radius:6px;height:10px;overflow:hidden;">'
+                f'<div style="height:100%;width:{pct:.1f}%;background:linear-gradient(90deg,{color}cc,{color});'
+                f'border-radius:6px;transition:width 0.4s ease;"></div>'
+                f'</div>'
+                f'</div>'
+            )
 
-        st.markdown(f"""
-        <div style="background:#13151C;border:1px solid #1E2028;border-radius:12px;padding:24px 28px;">
-          {html_bars}
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            '<div style="background:#13151C;border:1px solid #1E2028;border-radius:12px;padding:24px 28px;">'
+            + html_bars +
+            '</div>',
+            unsafe_allow_html=True
+        )
     else:
         st.info("Réentraînez le modèle avec le nouveau train_model.py pour afficher les importances.")
 
