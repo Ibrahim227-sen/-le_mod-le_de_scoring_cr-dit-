@@ -523,55 +523,99 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
 #  SVG ICONS
 # ═══════════════════════════════════════════════════════════
 def icon_bank():
-    return """<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-  <line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/>
-  <line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/>
-  <line x1="18" y1="18" x2="18" y2="11"/>
-  <polygon points="12 2 20 7 4 7"/></svg>"""
+    # Icône banque / institution financière premium
+    return """<svg width="22" height="22" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2" y="28" width="28" height="2.5" rx="1.25" fill="#C8922A"/>
+  <rect x="4" y="14" width="3" height="13" rx="1" fill="#C8922A" opacity="0.85"/>
+  <rect x="9.5" y="14" width="3" height="13" rx="1" fill="#C8922A" opacity="0.85"/>
+  <rect x="15" y="14" width="3" height="13" rx="1" fill="#C8922A" opacity="0.85"/>
+  <rect x="20.5" y="14" width="3" height="13" rx="1" fill="#C8922A" opacity="0.85"/>
+  <rect x="25" y="14" width="3" height="13" rx="1" fill="#C8922A" opacity="0.85"/>
+  <rect x="2" y="11" width="28" height="3" rx="1.5" fill="#C8922A"/>
+  <path d="M16 2L30 10H2L16 2Z" fill="#C8922A"/>
+  <circle cx="16" cy="7" r="1.5" fill="#13151C"/>
+</svg>"""
 
 def icon_chart():
-    return """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-  <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>"""
+    # Icône graphique analytique avec courbe ROC stylisée
+    return """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M3 20h18M3 20V4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M7 16l3-4 3 2 4-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="7" cy="16" r="1.5" fill="currentColor"/>
+  <circle cx="10" cy="12" r="1.5" fill="currentColor"/>
+  <circle cx="13" cy="14" r="1.5" fill="currentColor"/>
+  <circle cx="17" cy="8" r="1.5" fill="currentColor"/>
+</svg>"""
 
 def icon_target():
-    return """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>"""
+    # Icône cible / précision
+    return """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/>
+  <circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="1.8"/>
+  <circle cx="12" cy="12" r="2.5" fill="currentColor"/>
+  <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+</svg>"""
 
 def icon_zap():
-    return """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>"""
+    # Icône éclair / performance
+    return """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="currentColor" fill-opacity="0.15"/>
+</svg>"""
 
 def icon_award():
-    return """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>"""
+    # Icône médaille / récompense premium
+    return """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="12" cy="9" r="6" stroke="currentColor" stroke-width="1.8"/>
+  <path d="M9 15.5l-2 6 5-2.5 5 2.5-2-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M10 9l1.5 1.5L14 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>"""
 
 def icon_user():
-    return """<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-  <circle cx="12" cy="7" r="4"/></svg>"""
+    # Icône utilisateur avec badge professionnel
+    return """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="12" cy="7" r="4" stroke="#C8922A" stroke-width="1.8"/>
+  <path d="M4 21v-1a8 8 0 0 1 16 0v1" stroke="#C8922A" stroke-width="1.8" stroke-linecap="round"/>
+  <circle cx="19" cy="8" r="3" fill="#22C55E"/>
+  <path d="M17.5 8l1 1 2-2" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>"""
 
 def icon_money():
-    return """<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <rect x="2" y="5" width="20" height="14" rx="2"/>
-  <line x1="2" y1="10" x2="22" y2="10"/></svg>"""
+    # Icône monnaie africaine / FCFA
+    return """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="1" y="5" width="22" height="14" rx="3" stroke="#C8922A" stroke-width="1.8"/>
+  <circle cx="12" cy="12" r="3.5" stroke="#C8922A" stroke-width="1.8"/>
+  <line x1="1" y1="9.5" x2="23" y2="9.5" stroke="#C8922A" stroke-width="1.5"/>
+  <line x1="1" y1="14.5" x2="23" y2="14.5" stroke="#C8922A" stroke-width="1.5"/>
+</svg>"""
 
 def icon_briefcase():
-    return """<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <rect x="2" y="7" width="20" height="14" rx="2"/>
-  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-  <line x1="2" y1="12" x2="22" y2="12"/></svg>"""
+    # Icône portefeuille professionnel
+    return """<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2" y="8" width="20" height="13" rx="2.5" stroke="#C8922A" stroke-width="1.8"/>
+  <path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="#C8922A" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="2" y1="14" x2="22" y2="14" stroke="#C8922A" stroke-width="1.5" stroke-dasharray="2 1"/>
+  <circle cx="12" cy="14" r="1.5" fill="#C8922A"/>
+</svg>"""
 
 def icon_history():
-    return """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <polyline points="1 4 1 10 7 10"/>
-  <path d="M3.51 15a9 9 0 1 0 .49-4.54"/></svg>"""
+    # Icône historique avec horloge moderne
+    return """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+  <polyline points="12 7 12 12 16 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M3.5 6.5A9.5 9.5 0 0 1 6.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  <polyline points="1 4 3.5 6.5 6 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>"""
 
 def icon_info():
-    return """<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="12" cy="12" r="10"/>
-  <line x1="12" y1="16" x2="12" y2="12"/>
-  <line x1="12" y1="8" x2="12.01" y2="8"/></svg>"""
+    # Icône information premium avec fond
+    return """<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/>
+  <circle cx="12" cy="8" r="1.2" fill="currentColor"/>
+  <line x1="12" y1="11.5" x2="12" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+</svg>"""
 
 # ═══════════════════════════════════════════════════════════
 #  CHARGEMENT MODÈLE
@@ -849,17 +893,17 @@ with _col_right:
         box-shadow:0 0 10px rgba(34,197,94,0.12) !important;
     }
     </style>""", unsafe_allow_html=True)
-    if st.button(f"⬤ Modèle Actif · AUC {model_data['metrics']['auc']:.4f}", key="btn_perf_open"):
+    if st.button(f"● Modèle Actif  ·  AUC {model_data['metrics']['auc']:.4f}", key="btn_perf_open"):
         show_perf_dialog()
 
 # ═══════════════════════════════════════════════════════════
 #  NAVIGATION — ONGLETS
 # ═══════════════════════════════════════════════════════════
 tab_scoring, tab_batch, tab_importance, tab_about = st.tabs([
-    "🎯  Analyse Client",
-    "📂  Prédiction en Lot (CSV)",
-    "📊  Importance des Variables",
-    "ℹ️  À Propos",
+    "◈  Analyse Client",
+    "⊞  Prédiction en Lot (CSV)",
+    "⟁  Importance des Variables",
+    "◉  À Propos du Modèle",
 ])
 
 # ══════════════════════════════════════════════════════════
@@ -868,8 +912,15 @@ tab_scoring, tab_batch, tab_importance, tab_about = st.tabs([
 with tab_batch:
     st.markdown("""
     <div style="background:#13151C;border:1px solid #1E2028;border-radius:12px;padding:20px 24px;margin-bottom:16px;">
-      <div style="font-size:0.95rem;font-weight:700;color:#E8E9EC;margin-bottom:6px;">📂 Prédiction en lot — Chargement CSV</div>
-      <div style="font-size:0.78rem;color:#686D78;">Chargez un fichier CSV contenant plusieurs clients pour obtenir leurs scores en une seule fois.</div>
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+          <polyline points="13 2 13 9 20 9"/>
+          <line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/>
+        </svg>
+        <div style="font-size:0.95rem;font-weight:700;color:#E8E9EC;">Prédiction en lot — Chargement CSV</div>
+      </div>
+      <div style="font-size:0.78rem;color:#686D78;">Chargez un fichier CSV contenant plusieurs clients. Téléchargez d'abord le template, remplissez-le, puis importez-le pour obtenir les scores en masse.</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -956,7 +1007,13 @@ with tab_batch:
 with tab_importance:
     st.markdown("""
     <div style="background:#13151C;border:1px solid #1E2028;border-radius:12px;padding:20px 24px;margin-bottom:16px;">
-      <div style="font-size:0.95rem;font-weight:700;color:#E8E9EC;margin-bottom:6px;">📊 Importance des Variables — Top 10</div>
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+        </svg>
+        <div style="font-size:0.95rem;font-weight:700;color:#E8E9EC;">Importance des Variables — Top 10</div>
+      </div>
       <div style="font-size:0.78rem;color:#686D78;">Valeur absolue des coefficients de la Régression Logistique après standardisation. Plus le coefficient est élevé, plus la variable influence la prédiction.</div>
     </div>
     """, unsafe_allow_html=True)
@@ -1017,7 +1074,12 @@ with tab_about:
     st.markdown(f"""
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
       <div style="background:#13151C;border:1px solid #C8922A33;border-radius:12px;padding:22px 24px;">
-        <div style="font-size:0.7rem;color:#686D78;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">📚 Contexte académique</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+          </svg>
+          <div style="font-size:0.7rem;color:#686D78;text-transform:uppercase;letter-spacing:1px;">Contexte académique</div>
+        </div>
         <div style="font-size:0.85rem;color:#B0B5BE;line-height:1.7;">
           <strong style="color:#E8E9EC;">Institution :</strong> ISM Dakar<br>
           <strong style="color:#E8E9EC;">Filière :</strong> MBA1 Finance Digitale<br>
@@ -1027,7 +1089,13 @@ with tab_about:
         </div>
       </div>
       <div style="background:#13151C;border:1px solid #22C55E33;border-radius:12px;padding:22px 24px;">
-        <div style="font-size:0.7rem;color:#686D78;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">⚙️ Modèle utilisé</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/>
+          </svg>
+          <div style="font-size:0.7rem;color:#686D78;text-transform:uppercase;letter-spacing:1px;">Modèle utilisé</div>
+        </div>
         <div style="font-size:0.85rem;color:#B0B5BE;line-height:1.7;">
           <strong style="color:#E8E9EC;">Algorithme :</strong> Régression Logistique<br>
           <strong style="color:#E8E9EC;">Librairie :</strong> Scikit-Learn<br>
@@ -1039,29 +1107,48 @@ with tab_about:
     </div>
 
     <div style="background:#13151C;border:1px solid #3B82F633;border-radius:12px;padding:22px 24px;margin-bottom:14px;">
-      <div style="font-size:0.7rem;color:#686D78;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;">🎯 Performances du modèle sur le jeu de test (20%)</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="2">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+        <div style="font-size:0.7rem;color:#686D78;text-transform:uppercase;letter-spacing:1px;">Performances du modèle sur le jeu de test (20%)</div>
+      </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
-        <div style="text-align:center;padding:14px;background:#1C1F27;border-radius:10px;border:1px solid #22C55E22;">
-          <div style="font-size:1.5rem;font-weight:800;color:#22C55E;">{m.get('auc',0):.4f}</div>
-          <div style="font-size:0.65rem;color:#686D78;margin-top:4px;text-transform:uppercase;">AUC-ROC</div>
+        <div style="text-align:center;padding:16px 10px;background:linear-gradient(145deg,#0d2918,#0a1f12);border-radius:12px;border:1px solid #22C55E33;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#22C55E,transparent);"></div>
+          <div style="font-size:1.6rem;font-weight:900;color:#22C55E;letter-spacing:-1px;">{m.get('auc',0):.4f}</div>
+          <div style="font-size:0.6rem;color:#22C55E;opacity:0.7;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">AUC-ROC</div>
+          <div style="font-size:0.55rem;color:#3A3F4A;margin-top:3px;">Excellent</div>
         </div>
-        <div style="text-align:center;padding:14px;background:#1C1F27;border-radius:10px;border:1px solid #C8922A22;">
-          <div style="font-size:1.5rem;font-weight:800;color:#C8922A;">{m.get('f1',0):.4f}</div>
-          <div style="font-size:0.65rem;color:#686D78;margin-top:4px;text-transform:uppercase;">F1-Score</div>
+        <div style="text-align:center;padding:16px 10px;background:linear-gradient(145deg,#1a1000,#130c00);border-radius:12px;border:1px solid #C8922A33;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#C8922A,transparent);"></div>
+          <div style="font-size:1.6rem;font-weight:900;color:#C8922A;letter-spacing:-1px;">{m.get('f1',0):.4f}</div>
+          <div style="font-size:0.6rem;color:#C8922A;opacity:0.7;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">F1-Score</div>
+          <div style="font-size:0.55rem;color:#3A3F4A;margin-top:3px;">Équilibré</div>
         </div>
-        <div style="text-align:center;padding:14px;background:#1C1F27;border-radius:10px;border:1px solid #3B82F622;">
-          <div style="font-size:1.5rem;font-weight:800;color:#3B82F6;">{m.get('precision',0):.4f}</div>
-          <div style="font-size:0.65rem;color:#686D78;margin-top:4px;text-transform:uppercase;">Précision</div>
+        <div style="text-align:center;padding:16px 10px;background:linear-gradient(145deg,#0a1628,#081020);border-radius:12px;border:1px solid #3B82F633;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#3B82F6,transparent);"></div>
+          <div style="font-size:1.6rem;font-weight:900;color:#3B82F6;letter-spacing:-1px;">{m.get('precision',0):.4f}</div>
+          <div style="font-size:0.6rem;color:#3B82F6;opacity:0.7;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Précision</div>
+          <div style="font-size:0.55rem;color:#3A3F4A;margin-top:3px;">Fiable</div>
         </div>
-        <div style="text-align:center;padding:14px;background:#1C1F27;border-radius:10px;border:1px solid #A855F722;">
-          <div style="font-size:1.5rem;font-weight:800;color:#A855F7;">{m.get('recall',0):.4f}</div>
-          <div style="font-size:0.65rem;color:#686D78;margin-top:4px;text-transform:uppercase;">Rappel</div>
+        <div style="text-align:center;padding:16px 10px;background:linear-gradient(145deg,#160a28,#100720);border-radius:12px;border:1px solid #A855F733;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#A855F7,transparent);"></div>
+          <div style="font-size:1.6rem;font-weight:900;color:#A855F7;letter-spacing:-1px;">{m.get('recall',0):.4f}</div>
+          <div style="font-size:0.6rem;color:#A855F7;opacity:0.7;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">Rappel</div>
+          <div style="font-size:0.55rem;color:#3A3F4A;margin-top:3px;">Sensible</div>
         </div>
       </div>
     </div>
 
     <div style="background:#13151C;border:1px solid #1E2028;border-radius:12px;padding:22px 24px;">
-      <div style="font-size:0.7rem;color:#686D78;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">🔍 Pourquoi la Régression Logistique ?</div>
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:12px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+      </svg>
+      <div style="font-size:0.7rem;color:#686D78;text-transform:uppercase;letter-spacing:1px;">Pourquoi la Régression Logistique ?</div>
+    </div>
       <div style="font-size:0.82rem;color:#B0B5BE;line-height:1.8;">
         La Régression Logistique est l'algorithme de référence en scoring crédit bancaire pour plusieurs raisons :
         <br><br>
