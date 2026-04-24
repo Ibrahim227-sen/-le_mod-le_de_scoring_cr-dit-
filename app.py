@@ -853,242 +853,466 @@ with _col_right:
         show_perf_dialog()
 
 # ═══════════════════════════════════════════════════════════
-#  FORMULAIRE
+#  NAVIGATION — ONGLETS
 # ═══════════════════════════════════════════════════════════
-with st.form("scoring_form"):
+tab_scoring, tab_batch, tab_importance, tab_about = st.tabs([
+    "🎯  Analyse Client",
+    "📂  Prédiction en Lot (CSV)",
+    "📊  Importance des Variables",
+    "ℹ️  À Propos",
+])
 
-    # ── Section 1 : Identification ──
-    st.markdown(f"""
-    <div class="section-header">
-        <div class="section-icon blue">{icon_user()}</div>
-        <div class="section-title-text">Identification du Client</div>
+# ══════════════════════════════════════════════════════════
+#  ONGLET 2 — BATCH CSV
+# ══════════════════════════════════════════════════════════
+with tab_batch:
+    st.markdown("""
+    <div style="background:#13151C;border:1px solid #1E2028;border-radius:12px;padding:20px 24px;margin-bottom:16px;">
+      <div style="font-size:0.95rem;font-weight:700;color:#E8E9EC;margin-bottom:6px;">📂 Prédiction en lot — Chargement CSV</div>
+      <div style="font-size:0.78rem;color:#686D78;">Chargez un fichier CSV contenant plusieurs clients pour obtenir leurs scores en une seule fois.</div>
     </div>
     """, unsafe_allow_html=True)
 
-    nom_client = st.text_input(
-        "Référence Client",
-        value="CLI-2025-001",
-        placeholder="ex. CLI-2025-001",
-        help="Identifiant interne pour l'historique de session"
-    )
-
-    st.markdown('<div class="form-divider"></div>', unsafe_allow_html=True)
-
-    # ── Section 2 : Profil Financier ──
-    st.markdown(f"""
-    <div class="section-header">
-        <div class="section-icon gold">{icon_money()}</div>
-        <div class="section-title-text">Profil Financier & Comportement Bancaire</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # ── Ligne 1 : 4 variables numériques ──
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        revenu = st.number_input(
-            "Revenu Mensuel (FCFA)",
-            min_value=0, max_value=10_000_000, value=350_000, step=10_000,
-            help="Revenu mensuel brut déclaré du client")
-    with c2:
-        ratio_endettement = st.number_input(
-            "Ratio d'Endettement",
-            min_value=0.0, max_value=1.0, value=0.35, step=0.01, format="%.2f",
-            help="Part du revenu mensuel consacrée aux remboursements (0 à 1)")
-    with c3:
-        score_interne = st.number_input(
-            "Score Interne Banque",
-            min_value=0, max_value=1000, value=500, step=10,
-            help="Score de risque calculé en interne (0 = très risqué, 1000 = excellent)")
-    with c4:
-        nb_incidents = st.number_input(
-            "Incidents de Paiement",
-            min_value=0, max_value=50, value=0, step=1,
-            help="Nombre total d'incidents de paiement dans l'historique")
-
-    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
-
-    # ── Ligne 2 : 4 variables numériques ──
-    c5, c6, c7, c8 = st.columns(4)
-    with c5:
-        jours_retard = st.number_input(
-            "Retard Maximum (jours)",
-            min_value=0, max_value=365, value=0, step=1,
-            help="Nombre maximal de jours de retard observé sur un crédit")
-    with c6:
-        nb_rejets = st.number_input(
-            "Rejets de Prélèvement",
-            min_value=0, max_value=50, value=0, step=1,
-            help="Nombre de prélèvements automatiques rejetés faute de provision")
-    with c7:
-        nb_decouvert = st.number_input(
-            "Découverts (12 mois)",
-            min_value=0, max_value=30, value=0, step=1,
-            help="Nombre de fois en situation de découvert sur les 12 derniers mois")
-    with c8:
-        anciennete = st.number_input(
-            "Ancienneté Client (mois)",
-            min_value=0, max_value=360, value=24, step=1,
-            help="Durée de la relation bancaire en mois")
-
-    st.markdown('<div class="form-divider"></div>', unsafe_allow_html=True)
-
-    # ── Section 3 : Profil Pro & Garanties ──
-    st.markdown(f"""
-    <div class="section-header">
-        <div class="section-icon slate">{icon_briefcase()}</div>
-        <div class="section-title-text">Profil Professionnel & Garanties — Variables 9 &amp; 10</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    c9, c10 = st.columns(2)
-    with c9:
-        st.markdown("<p style='font-size:0.72rem;font-weight:700;color:#8B909A;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;'>Type d'Emploi</p>", unsafe_allow_html=True)
-        type_emploi = st.radio(
-            "Type d'Emploi",
-            options=["CDI", "Fonctionnaire", "CDD", "Indépendant", "Entrepreneur", "Retraité", "Sans emploi"],
-            horizontal=True,
-            label_visibility="collapsed",
-            key="type_emploi_radio"
-        )
-    with c10:
-        st.markdown("<p style='font-size:0.72rem;font-weight:700;color:#8B909A;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;'>Garantie Apportée</p>", unsafe_allow_html=True)
-        garantie = st.radio(
-            "Garantie Apportée",
-            options=["Hypothèque", "Assurance", "Caution", "Nantissement", "Aucune"],
-            horizontal=True,
-            label_visibility="collapsed",
-            key="garantie_radio"
+    col_dl, _ = st.columns([1, 2])
+    with col_dl:
+        # Template CSV téléchargeable
+        template_data = {
+            "REVENU_MENSUEL_FCFA":    [350000, 180000, 650000],
+            "RATIO_ENDETTEMENT":      [0.35, 0.60, 0.20],
+            "SCORE_INTERNE_BANQUE":   [500, 300, 750],
+            "NB_INCIDENTS_PAIEMENT":  [0, 3, 0],
+            "JOURS_RETARD_MAX":       [0, 45, 0],
+            "NB_REJETS_PRELEVEMENT":  [0, 2, 0],
+            "NB_DECOUVERT_12MOIS":    [0, 5, 0],
+            "ANCIENNETE_CLIENT_MOIS": [24, 6, 60],
+            "TYPE_EMPLOI":            ["CDI", "Sans emploi", "Fonctionnaire"],
+            "GARANTIE":               ["Hypothèque", "Aucune", "Assurance"],
+        }
+        import io
+        template_df = pd.DataFrame(template_data)
+        csv_bytes = template_df.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            "⬇️  Télécharger le template CSV",
+            data=csv_bytes,
+            file_name="template_scoring_clients.csv",
+            mime="text/csv",
         )
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    submitted = st.form_submit_button(
-        "  ANALYSER LE RISQUE DE CRÉDIT",
-        use_container_width=True
+    uploaded_csv = st.file_uploader(
+        "Chargez votre fichier CSV de clients",
+        type=["csv"],
+        help="Le fichier doit contenir exactement les 10 colonnes du template."
     )
 
-# ═══════════════════════════════════════════════════════════
-#  RÉSULTATS
-# ═══════════════════════════════════════════════════════════
-def score_from_proba(p): return int(round((1 - p) * 1000))
+    if uploaded_csv is not None:
+        try:
+            batch_df = pd.read_csv(uploaded_csv)
+            st.success(f"✅ {len(batch_df)} clients chargés")
 
-def badge_score(s):
-    if s >= 700: return "faible", "Risque Faible"
-    elif s >= 400: return "modere", "Risque Modéré"
-    else: return "eleve", "Risque Élevé"
+            required_cols = all_features
+            missing = [c for c in required_cols if c not in batch_df.columns]
+            if missing:
+                st.error(f"Colonnes manquantes : {missing}")
+            else:
+                probas = pipeline.predict_proba(batch_df[all_features])[:, 1]
+                batch_df["PROBABILITE_DEFAUT_%"] = (probas * 100).round(2)
+                batch_df["DECISION"] = ["Refusé" if p >= THRESHOLD else "Accordé" for p in probas]
+                batch_df["SCORE_1000"] = [(1 - p) * 1000 for p in probas]
+                batch_df["SCORE_1000"] = batch_df["SCORE_1000"].round(0).astype(int)
 
-def gauge_color(s):
-    if s >= 700: return "linear-gradient(90deg, #15803D, #22C55E)"
-    elif s >= 400: return "linear-gradient(90deg, #B45309, #F59E0B)"
-    else: return "linear-gradient(90deg, #991B1B, #EF4444)"
+                # Stats résumé
+                n_accorde = (batch_df["DECISION"] == "Accordé").sum()
+                n_refuse  = (batch_df["DECISION"] == "Refusé").sum()
 
-if submitted:
-    input_df = pd.DataFrame([{
-        "REVENU_MENSUEL_FCFA":    revenu,
-        "RATIO_ENDETTEMENT":      ratio_endettement,
-        "SCORE_INTERNE_BANQUE":   score_interne,
-        "NB_INCIDENTS_PAIEMENT":  nb_incidents,
-        "JOURS_RETARD_MAX":       jours_retard,
-        "NB_REJETS_PRELEVEMENT":  nb_rejets,
-        "NB_DECOUVERT_12MOIS":    nb_decouvert,
-        "ANCIENNETE_CLIENT_MOIS": anciennete,
-        "TYPE_EMPLOI":            type_emploi,
-        "GARANTIE":               garantie,
-    }])
+                c1, c2, c3 = st.columns(3)
+                c1.metric("Total clients", len(batch_df))
+                c2.metric("✅ Accordés", n_accorde, f"{n_accorde/len(batch_df):.0%}")
+                c3.metric("❌ Refusés",  n_refuse,  f"{n_refuse/len(batch_df):.0%}")
 
-    proba    = pipeline.predict_proba(input_df)[0][1]
-    decision = "Refusé" if proba >= THRESHOLD else "Accordé"
-    score    = score_from_proba(proba)
-    proba_p  = proba * 100
-    badge_cls, badge_lbl = badge_score(score)
-    g_color  = gauge_color(score)
-    p_color  = "#EF4444" if proba >= THRESHOLD else "#22C55E"
+                # Affichage tableau avec couleurs
+                def color_decision(val):
+                    color = "#22C55E" if val == "Accordé" else "#EF4444"
+                    return f"color: {color}; font-weight: 700"
 
-    st.session_state.historique.append({
-        "nom": nom_client, "score": score,
-        "proba": proba_p, "decision": decision,
-    })
+                styled = batch_df[["PROBABILITE_DEFAUT_%","DECISION","SCORE_1000"] +
+                                   [c for c in batch_df.columns if c not in ["PROBABILITE_DEFAUT_%","DECISION","SCORE_1000"]]
+                                 ].style.applymap(color_decision, subset=["DECISION"])
+                st.dataframe(styled, use_container_width=True, height=350)
 
-    # ── Ligne de résultats ──
-    st.markdown("<br>", unsafe_allow_html=True)
+                # Téléchargement résultats
+                result_csv = batch_df.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    "⬇️  Télécharger les résultats",
+                    data=result_csv,
+                    file_name="resultats_scoring_lot.csv",
+                    mime="text/csv",
+                )
+        except Exception as e:
+            st.error(f"Erreur lors du traitement : {e}")
 
-    r1, r2, r3 = st.columns([1.1, 0.95, 0.95])
-
-    with r1:
-        is_ok = decision == "Accordé"
-        banner_cls = "accord" if is_ok else "refuse"
-        d_icon = "✓" if is_ok else "✕"
-        d_label = "DÉCISION CRÉDIT"
-        d_msg = ("Dossier validé — le profil de risque est acceptable." if is_ok
-                 else "Dossier refusé — risque de défaut trop élevé.")
-        st.markdown(f"""
-        <div class="result-banner {banner_cls}">
-            <div class="result-icon">{d_icon}</div>
-            <div class="result-label {banner_cls}">{d_label}</div>
-            <div class="result-decision {banner_cls}">Crédit {decision.upper()}</div>
-            <div class="result-msg {banner_cls}">{d_msg}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with r2:
-        st.markdown(f"""
-        <div class="kpi-card">
-            <div class="kpi-label">Score de Risque</div>
-            <div class="kpi-value" style="color:{p_color if score < 400 else ('#F59E0B' if score < 700 else '#22C55E')};">{score}</div>
-            <div class="kpi-sub">sur 1 000 points</div>
-            <div class="kpi-badge {badge_cls}">{badge_lbl}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with r3:
-        st.markdown(f"""
-        <div class="kpi-card">
-            <div class="kpi-label">Probabilité de Défaut</div>
-            <div class="kpi-value" style="color:{p_color};">{proba_p:.1f}<span style="font-size:1.4rem;">%</span></div>
-            <div class="kpi-sub">seuil de décision : 76%</div>
-            <div class="kpi-badge {'eleve' if proba >= THRESHOLD else 'faible'}">{'Au-dessus' if proba >= THRESHOLD else 'En-dessous'} du seuil</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # ── Jauge ──
-    bar_w = score / 10
-    st.markdown(f"""
-    <div class="gauge-wrap">
-        <div class="gauge-title">
-            <span>Jauge de Risque — Score sur 1000</span>
-            <span style="color:#C8CDD6; font-weight:700;">{score} / 1000</span>
-        </div>
-        <div class="gauge-track">
-            <div class="gauge-fill" style="width:{bar_w}%; background:{g_color};"></div>
-        </div>
-        <div class="gauge-ticks">
-            <span class="gauge-tick">0</span>
-            <span class="gauge-tick {'active' if score >= 400 else ''}">▲ 400</span>
-            <span class="gauge-tick {'active' if score >= 700 else ''}">▲ 700</span>
-            <span class="gauge-tick active">1000</span>
-        </div>
+# ══════════════════════════════════════════════════════════
+#  ONGLET 3 — FEATURE IMPORTANCE
+# ══════════════════════════════════════════════════════════
+with tab_importance:
+    st.markdown("""
+    <div style="background:#13151C;border:1px solid #1E2028;border-radius:12px;padding:20px 24px;margin-bottom:16px;">
+      <div style="font-size:0.95rem;font-weight:700;color:#E8E9EC;margin-bottom:6px;">📊 Importance des Variables — Top 10</div>
+      <div style="font-size:0.78rem;color:#686D78;">Valeur absolue des coefficients de la Régression Logistique après standardisation. Plus le coefficient est élevé, plus la variable influence la prédiction.</div>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Récapitulatif ──
-    st.markdown("<br>", unsafe_allow_html=True)
-    with st.expander("Récapitulatif des données saisies", expanded=False):
-        rows = [
-            ("Référence client",      nom_client),
-            ("Revenu mensuel",        f"{revenu:,} FCFA"),
-            ("Ratio d'endettement",   f"{ratio_endettement:.2f}  ({ratio_endettement*100:.0f}%)"),
-            ("Score interne banque",  str(score_interne)),
-            ("Incidents de paiement", str(nb_incidents)),
-            ("Retard maximum",        f"{jours_retard} jours"),
-            ("Rejets prélèvement",    str(nb_rejets)),
-            ("Découverts (12 mois)",  str(nb_decouvert)),
-            ("Ancienneté client",     f"{anciennete} mois"),
-            ("Type d'emploi",         type_emploi),
-            ("Garantie",              garantie),
-        ]
-        html = ""
-        for k, v in rows:
-            html += f'<div class="recap-row"><span class="recap-key">{k}</span><span class="recap-val">{v}</span></div>'
-        st.markdown(f'<div style="background:#111318;border:1px solid #1E2028;border-radius:10px;padding:0.75rem 1rem;">{html}</div>', unsafe_allow_html=True)
+    if "feature_importance" in model_data:
+        fi = model_data["feature_importance"]
+        fi_df = pd.DataFrame(list(fi.items()), columns=["Variable", "Importance"])
+        fi_df = fi_df.sort_values("Importance", ascending=False).head(10).reset_index(drop=True)
+        fi_df["Rang"] = fi_df.index + 1
+        max_imp = fi_df["Importance"].max()
+
+        labels_fr = {
+            "REVENU_MENSUEL_FCFA":    "Revenu mensuel (FCFA)",
+            "RATIO_ENDETTEMENT":      "Ratio d'endettement",
+            "SCORE_INTERNE_BANQUE":   "Score interne banque",
+            "NB_INCIDENTS_PAIEMENT":  "Incidents de paiement",
+            "JOURS_RETARD_MAX":       "Retard maximum (jours)",
+            "NB_REJETS_PRELEVEMENT":  "Rejets de prélèvement",
+            "NB_DECOUVERT_12MOIS":    "Découverts (12 mois)",
+            "ANCIENNETE_CLIENT_MOIS": "Ancienneté client",
+        }
+
+        colors = ["#C8922A","#E8A93A","#D4A044","#B8863C","#C89A50",
+                  "#22C55E","#3B82F6","#A855F7","#EF4444","#F59E0B"]
+
+        html_bars = ""
+        for i, row in fi_df.iterrows():
+            label = labels_fr.get(row["Variable"], row["Variable"])
+            pct   = row["Importance"] / max_imp * 100
+            color = colors[i % len(colors)]
+            html_bars += f"""
+            <div style="margin-bottom:14px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                <span style="font-size:0.8rem;color:#B0B5BE;font-weight:600;">
+                  <span style="color:{color};margin-right:8px;">#{row['Rang']}</span>{label}
+                </span>
+                <span style="font-size:0.78rem;color:{color};font-weight:700;">{row['Importance']:.4f}</span>
+              </div>
+              <div style="background:#1C1F27;border-radius:6px;height:10px;overflow:hidden;">
+                <div style="height:100%;width:{pct:.1f}%;background:linear-gradient(90deg,{color}cc,{color});
+                            border-radius:6px;transition:width 0.4s ease;"></div>
+              </div>
+            </div>"""
+
+        st.markdown(f"""
+        <div style="background:#13151C;border:1px solid #1E2028;border-radius:12px;padding:24px 28px;">
+          {html_bars}
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.info("Réentraînez le modèle avec le nouveau train_model.py pour afficher les importances.")
+
+# ══════════════════════════════════════════════════════════
+#  ONGLET 4 — À PROPOS
+# ══════════════════════════════════════════════════════════
+with tab_about:
+    m = model_data["metrics"] if model_data else {}
+    st.markdown(f"""
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+      <div style="background:#13151C;border:1px solid #C8922A33;border-radius:12px;padding:22px 24px;">
+        <div style="font-size:0.7rem;color:#686D78;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">📚 Contexte académique</div>
+        <div style="font-size:0.85rem;color:#B0B5BE;line-height:1.7;">
+          <strong style="color:#E8E9EC;">Institution :</strong> ISM Dakar<br>
+          <strong style="color:#E8E9EC;">Filière :</strong> MBA1 Finance Digitale<br>
+          <strong style="color:#E8E9EC;">Module :</strong> Modélisation Prédictive & IA en Finance<br>
+          <strong style="color:#E8E9EC;">Professeur :</strong> M. Komla Martin CHOKKI<br>
+          <strong style="color:#E8E9EC;">Année :</strong> 2025-2026
+        </div>
+      </div>
+      <div style="background:#13151C;border:1px solid #22C55E33;border-radius:12px;padding:22px 24px;">
+        <div style="font-size:0.7rem;color:#686D78;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">⚙️ Modèle utilisé</div>
+        <div style="font-size:0.85rem;color:#B0B5BE;line-height:1.7;">
+          <strong style="color:#E8E9EC;">Algorithme :</strong> Régression Logistique<br>
+          <strong style="color:#E8E9EC;">Librairie :</strong> Scikit-Learn<br>
+          <strong style="color:#E8E9EC;">Prétraitement :</strong> StandardScaler + OneHotEncoder<br>
+          <strong style="color:#E8E9EC;">Déséquilibre :</strong> class_weight='balanced'<br>
+          <strong style="color:#E8E9EC;">Dataset :</strong> 900 000 observations, 47 variables
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#13151C;border:1px solid #3B82F633;border-radius:12px;padding:22px 24px;margin-bottom:14px;">
+      <div style="font-size:0.7rem;color:#686D78;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;">🎯 Performances du modèle sur le jeu de test (20%)</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+        <div style="text-align:center;padding:14px;background:#1C1F27;border-radius:10px;border:1px solid #22C55E22;">
+          <div style="font-size:1.5rem;font-weight:800;color:#22C55E;">{m.get('auc',0):.4f}</div>
+          <div style="font-size:0.65rem;color:#686D78;margin-top:4px;text-transform:uppercase;">AUC-ROC</div>
+        </div>
+        <div style="text-align:center;padding:14px;background:#1C1F27;border-radius:10px;border:1px solid #C8922A22;">
+          <div style="font-size:1.5rem;font-weight:800;color:#C8922A;">{m.get('f1',0):.4f}</div>
+          <div style="font-size:0.65rem;color:#686D78;margin-top:4px;text-transform:uppercase;">F1-Score</div>
+        </div>
+        <div style="text-align:center;padding:14px;background:#1C1F27;border-radius:10px;border:1px solid #3B82F622;">
+          <div style="font-size:1.5rem;font-weight:800;color:#3B82F6;">{m.get('precision',0):.4f}</div>
+          <div style="font-size:0.65rem;color:#686D78;margin-top:4px;text-transform:uppercase;">Précision</div>
+        </div>
+        <div style="text-align:center;padding:14px;background:#1C1F27;border-radius:10px;border:1px solid #A855F722;">
+          <div style="font-size:1.5rem;font-weight:800;color:#A855F7;">{m.get('recall',0):.4f}</div>
+          <div style="font-size:0.65rem;color:#686D78;margin-top:4px;text-transform:uppercase;">Rappel</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#13151C;border:1px solid #1E2028;border-radius:12px;padding:22px 24px;">
+      <div style="font-size:0.7rem;color:#686D78;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">🔍 Pourquoi la Régression Logistique ?</div>
+      <div style="font-size:0.82rem;color:#B0B5BE;line-height:1.8;">
+        La Régression Logistique est l'algorithme de référence en scoring crédit bancaire pour plusieurs raisons :
+        <br><br>
+        <span style="color:#C8922A;font-weight:600;">① Interprétabilité :</span> Chaque coefficient est directement lisible et justifiable auprès d'un régulateur (Bâle III).<br>
+        <span style="color:#22C55E;font-weight:600;">② Performance :</span> Avec un AUC de {m.get('auc',0):.4f}, elle capture l'essentiel de la relation risque-défaut.<br>
+        <span style="color:#3B82F6;font-weight:600;">③ Rapidité :</span> Entraînement et inférence quasi-instantanés sur 900 000 observations.<br>
+        <span style="color:#A855F7;font-weight:600;">④ Standard industrie :</span> Utilisée par la quasi-totalité des banques africaines pour le scoring réglementaire.
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ══════════════════════════════════════════════════════════
+#  ONGLET 1 — FORMULAIRE SCORING (contenu existant)
+# ══════════════════════════════════════════════════════════
+with tab_scoring:
+
+    with st.form("scoring_form"):
+    
+        # ── Section 1 : Identification ──
+        st.markdown(f"""
+        <div class="section-header">
+            <div class="section-icon blue">{icon_user()}</div>
+            <div class="section-title-text">Identification du Client</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+        nom_client = st.text_input(
+            "Référence Client",
+            value="CLI-2025-001",
+            placeholder="ex. CLI-2025-001",
+            help="Identifiant interne pour l'historique de session"
+        )
+    
+        st.markdown('<div class="form-divider"></div>', unsafe_allow_html=True)
+    
+        # ── Section 2 : Profil Financier ──
+        st.markdown(f"""
+        <div class="section-header">
+            <div class="section-icon gold">{icon_money()}</div>
+            <div class="section-title-text">Profil Financier & Comportement Bancaire</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+        # ── Ligne 1 : 4 variables numériques ──
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            revenu = st.number_input(
+                "Revenu Mensuel (FCFA)",
+                min_value=0, max_value=10_000_000, value=350_000, step=10_000,
+                help="Revenu mensuel brut déclaré du client")
+        with c2:
+            ratio_endettement = st.number_input(
+                "Ratio d'Endettement",
+                min_value=0.0, max_value=1.0, value=0.35, step=0.01, format="%.2f",
+                help="Part du revenu mensuel consacrée aux remboursements (0 à 1)")
+        with c3:
+            score_interne = st.number_input(
+                "Score Interne Banque",
+                min_value=0, max_value=1000, value=500, step=10,
+                help="Score de risque calculé en interne (0 = très risqué, 1000 = excellent)")
+        with c4:
+            nb_incidents = st.number_input(
+                "Incidents de Paiement",
+                min_value=0, max_value=50, value=0, step=1,
+                help="Nombre total d'incidents de paiement dans l'historique")
+    
+        st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+    
+        # ── Ligne 2 : 4 variables numériques ──
+        c5, c6, c7, c8 = st.columns(4)
+        with c5:
+            jours_retard = st.number_input(
+                "Retard Maximum (jours)",
+                min_value=0, max_value=365, value=0, step=1,
+                help="Nombre maximal de jours de retard observé sur un crédit")
+        with c6:
+            nb_rejets = st.number_input(
+                "Rejets de Prélèvement",
+                min_value=0, max_value=50, value=0, step=1,
+                help="Nombre de prélèvements automatiques rejetés faute de provision")
+        with c7:
+            nb_decouvert = st.number_input(
+                "Découverts (12 mois)",
+                min_value=0, max_value=30, value=0, step=1,
+                help="Nombre de fois en situation de découvert sur les 12 derniers mois")
+        with c8:
+            anciennete = st.number_input(
+                "Ancienneté Client (mois)",
+                min_value=0, max_value=360, value=24, step=1,
+                help="Durée de la relation bancaire en mois")
+    
+        st.markdown('<div class="form-divider"></div>', unsafe_allow_html=True)
+    
+        # ── Section 3 : Profil Pro & Garanties ──
+        st.markdown(f"""
+        <div class="section-header">
+            <div class="section-icon slate">{icon_briefcase()}</div>
+            <div class="section-title-text">Profil Professionnel & Garanties — Variables 9 &amp; 10</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+        c9, c10 = st.columns(2)
+        with c9:
+            st.markdown("<p style='font-size:0.72rem;font-weight:700;color:#8B909A;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;'>Type d'Emploi</p>", unsafe_allow_html=True)
+            type_emploi = st.radio(
+                "Type d'Emploi",
+                options=["CDI", "Fonctionnaire", "CDD", "Indépendant", "Entrepreneur", "Retraité", "Sans emploi"],
+                horizontal=True,
+                label_visibility="collapsed",
+                key="type_emploi_radio"
+            )
+        with c10:
+            st.markdown("<p style='font-size:0.72rem;font-weight:700;color:#8B909A;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;'>Garantie Apportée</p>", unsafe_allow_html=True)
+            garantie = st.radio(
+                "Garantie Apportée",
+                options=["Hypothèque", "Assurance", "Caution", "Nantissement", "Aucune"],
+                horizontal=True,
+                label_visibility="collapsed",
+                key="garantie_radio"
+            )
+    
+        st.markdown("<br>", unsafe_allow_html=True)
+        submitted = st.form_submit_button(
+            "  ANALYSER LE RISQUE DE CRÉDIT",
+            use_container_width=True
+        )
+    
+    # ═══════════════════════════════════════════════════════════
+    #  RÉSULTATS
+    # ═══════════════════════════════════════════════════════════
+    def score_from_proba(p): return int(round((1 - p) * 1000))
+    
+    def badge_score(s):
+        if s >= 700: return "faible", "Risque Faible"
+        elif s >= 400: return "modere", "Risque Modéré"
+        else: return "eleve", "Risque Élevé"
+    
+    def gauge_color(s):
+        if s >= 700: return "linear-gradient(90deg, #15803D, #22C55E)"
+        elif s >= 400: return "linear-gradient(90deg, #B45309, #F59E0B)"
+        else: return "linear-gradient(90deg, #991B1B, #EF4444)"
+    
+    if submitted:
+        input_df = pd.DataFrame([{
+            "REVENU_MENSUEL_FCFA":    revenu,
+            "RATIO_ENDETTEMENT":      ratio_endettement,
+            "SCORE_INTERNE_BANQUE":   score_interne,
+            "NB_INCIDENTS_PAIEMENT":  nb_incidents,
+            "JOURS_RETARD_MAX":       jours_retard,
+            "NB_REJETS_PRELEVEMENT":  nb_rejets,
+            "NB_DECOUVERT_12MOIS":    nb_decouvert,
+            "ANCIENNETE_CLIENT_MOIS": anciennete,
+            "TYPE_EMPLOI":            type_emploi,
+            "GARANTIE":               garantie,
+        }])
+    
+        proba    = pipeline.predict_proba(input_df)[0][1]
+        decision = "Refusé" if proba >= THRESHOLD else "Accordé"
+        score    = score_from_proba(proba)
+        proba_p  = proba * 100
+        badge_cls, badge_lbl = badge_score(score)
+        g_color  = gauge_color(score)
+        p_color  = "#EF4444" if proba >= THRESHOLD else "#22C55E"
+    
+        st.session_state.historique.append({
+            "nom": nom_client, "score": score,
+            "proba": proba_p, "decision": decision,
+        })
+    
+        # ── Ligne de résultats ──
+        st.markdown("<br>", unsafe_allow_html=True)
+    
+        r1, r2, r3 = st.columns([1.1, 0.95, 0.95])
+    
+        with r1:
+            is_ok = decision == "Accordé"
+            banner_cls = "accord" if is_ok else "refuse"
+            d_icon = "✓" if is_ok else "✕"
+            d_label = "DÉCISION CRÉDIT"
+            d_msg = ("Dossier validé — le profil de risque est acceptable." if is_ok
+                     else "Dossier refusé — risque de défaut trop élevé.")
+            st.markdown(f"""
+            <div class="result-banner {banner_cls}">
+                <div class="result-icon">{d_icon}</div>
+                <div class="result-label {banner_cls}">{d_label}</div>
+                <div class="result-decision {banner_cls}">Crédit {decision.upper()}</div>
+                <div class="result-msg {banner_cls}">{d_msg}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+        with r2:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Score de Risque</div>
+                <div class="kpi-value" style="color:{p_color if score < 400 else ('#F59E0B' if score < 700 else '#22C55E')};">{score}</div>
+                <div class="kpi-sub">sur 1 000 points</div>
+                <div class="kpi-badge {badge_cls}">{badge_lbl}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+        with r3:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Probabilité de Défaut</div>
+                <div class="kpi-value" style="color:{p_color};">{proba_p:.1f}<span style="font-size:1.4rem;">%</span></div>
+                <div class="kpi-sub">seuil de décision : 76%</div>
+                <div class="kpi-badge {'eleve' if proba >= THRESHOLD else 'faible'}">{'Au-dessus' if proba >= THRESHOLD else 'En-dessous'} du seuil</div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+        # ── Jauge ──
+        bar_w = score / 10
+        st.markdown(f"""
+        <div class="gauge-wrap">
+            <div class="gauge-title">
+                <span>Jauge de Risque — Score sur 1000</span>
+                <span style="color:#C8CDD6; font-weight:700;">{score} / 1000</span>
+            </div>
+            <div class="gauge-track">
+                <div class="gauge-fill" style="width:{bar_w}%; background:{g_color};"></div>
+            </div>
+            <div class="gauge-ticks">
+                <span class="gauge-tick">0</span>
+                <span class="gauge-tick {'active' if score >= 400 else ''}">▲ 400</span>
+                <span class="gauge-tick {'active' if score >= 700 else ''}">▲ 700</span>
+                <span class="gauge-tick active">1000</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+        # ── Récapitulatif ──
+        st.markdown("<br>", unsafe_allow_html=True)
+        with st.expander("Récapitulatif des données saisies", expanded=False):
+            rows = [
+                ("Référence client",      nom_client),
+                ("Revenu mensuel",        f"{revenu:,} FCFA"),
+                ("Ratio d'endettement",   f"{ratio_endettement:.2f}  ({ratio_endettement*100:.0f}%)"),
+                ("Score interne banque",  str(score_interne)),
+                ("Incidents de paiement", str(nb_incidents)),
+                ("Retard maximum",        f"{jours_retard} jours"),
+                ("Rejets prélèvement",    str(nb_rejets)),
+                ("Découverts (12 mois)",  str(nb_decouvert)),
+                ("Ancienneté client",     f"{anciennete} mois"),
+                ("Type d'emploi",         type_emploi),
+                ("Garantie",              garantie),
+            ]
+            html = ""
+            for k, v in rows:
+                html += f'<div class="recap-row"><span class="recap-key">{k}</span><span class="recap-val">{v}</span></div>'
+            st.markdown(f'<div style="background:#111318;border:1px solid #1E2028;border-radius:10px;padding:0.75rem 1rem;">{html}</div>', unsafe_allow_html=True)
+    
 
 # ── Footer ──
 st.markdown("""
