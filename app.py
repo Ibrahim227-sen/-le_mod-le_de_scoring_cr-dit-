@@ -755,7 +755,7 @@ pipeline             = model_data["pipeline"]
 numerical_features   = model_data["numerical_features"]
 categorical_features = model_data["categorical_features"]
 all_features         = model_data["all_features"]
-THRESHOLD            = model_data.get("threshold", 0.76)  # Seuil optimisé
+THRESHOLD            = model_data.get("threshold", 0.50)  # Seuil 0.5 (consigne prof)
 
 # ═══════════════════════════════════════════════════════════
 #  TOPBAR + MODALE PERFORMANCES  (st.dialog — Streamlit ≥ 1.32)
@@ -960,12 +960,22 @@ with tab_batch:
             batch_df = pd.read_csv(uploaded_csv)
             st.success(f"✅ {len(batch_df)} clients chargés")
 
-            required_cols = all_features
-            missing = [c for c in required_cols if c not in batch_df.columns]
+            num_cols_all = model_data.get("numerical_cols", model_data["numerical_features"])
+            cat_cols_all = model_data.get("categorical_cols", model_data["categorical_features"])
+            required_cols = num_cols_all + cat_cols_all
+            # Construire le DataFrame avec toutes les colonnes attendues
+            batch_full = pd.DataFrame()
+            for c in num_cols_all:
+                batch_full[c] = batch_df[c] if c in batch_df.columns else 0
+            for c in cat_cols_all:
+                batch_full[c] = batch_df[c] if c in batch_df.columns else "Inconnu"
+            missing = [c for c in ["REVENU_MENSUEL_FCFA","RATIO_ENDETTEMENT","SCORE_INTERNE_BANQUE",
+                                   "NB_INCIDENTS_PAIEMENT","JOURS_RETARD_MAX","NB_REJETS_PRELEVEMENT",
+                                   "NB_DECOUVERT_12MOIS","ANCIENNETE_CLIENT_MOIS"] if c not in batch_df.columns]
             if missing:
-                st.error(f"Colonnes manquantes : {missing}")
+                st.error(f"Colonnes obligatoires manquantes : {missing}")
             else:
-                probas = pipeline.predict_proba(batch_df[all_features])[:, 1]
+                probas = pipeline.predict_proba(batch_full)[:, 1]
                 batch_df["PROBABILITE_DEFAUT_%"] = (probas * 100).round(2)
                 batch_df["DECISION"] = ["Refusé" if p >= THRESHOLD else "Accordé" for p in probas]
                 batch_df["SCORE_1000"] = [(1 - p) * 1000 for p in probas]
@@ -1292,7 +1302,8 @@ with tab_scoring:
         else: return "linear-gradient(90deg, #991B1B, #EF4444)"
     
     if submitted:
-        input_df = pd.DataFrame([{
+        # Données saisies dans l'interface (10 variables clés)
+        input_saisie = {
             "REVENU_MENSUEL_FCFA":    revenu,
             "RATIO_ENDETTEMENT":      ratio_endettement,
             "SCORE_INTERNE_BANQUE":   score_interne,
@@ -1303,8 +1314,18 @@ with tab_scoring:
             "ANCIENNETE_CLIENT_MOIS": anciennete,
             "TYPE_EMPLOI":            type_emploi,
             "GARANTIE":               garantie,
-        }])
-    
+        }
+        # Construction du DataFrame complet pour le pipeline
+        # (le modèle a été entraîné sur toutes les colonnes du dataset)
+        num_cols_all = model_data.get("numerical_cols", model_data["numerical_features"])
+        cat_cols_all = model_data.get("categorical_cols", model_data["categorical_features"])
+        row = {}
+        for c in num_cols_all:
+            row[c] = input_saisie.get(c, 0)   # 0 pour les colonnes non saisies
+        for c in cat_cols_all:
+            row[c] = input_saisie.get(c, "Inconnu")
+        input_df = pd.DataFrame([row])
+
         proba    = pipeline.predict_proba(input_df)[0][1]
         decision = "Refusé" if proba >= THRESHOLD else "Accordé"
         score    = score_from_proba(proba)
