@@ -517,7 +517,73 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
 </style>
 """, unsafe_allow_html=True)
 
-# Sidebar toggle supprimé — géré nativement par Streamlit
+# ═══════════════════════════════════════════════════════════
+#  SIDEBAR TOGGLE — FIX JAVASCRIPT
+# ═══════════════════════════════════════════════════════════
+# Sidebar toggle via components.html (seule méthode qui exécute vraiment le JS)
+components.html("""
+<script>
+(function() {
+    function fixSidebarToggle() {
+        var toggleBtn = document.querySelector('[data-testid="stSidebarCollapsedControl"]');
+
+        if (toggleBtn) {
+            toggleBtn.style.cssText = [
+                "display:flex!important",
+                "visibility:visible!important",
+                "opacity:1!important",
+                "z-index:99999!important",
+                "position:fixed!important",
+                "left:0",
+                "top:50%",
+                "transform:translateY(-50%)",
+                "background:#1C1F27",
+                "border:1px solid #C8922A88",
+                "border-left:none",
+                "border-radius:0 8px 8px 0",
+                "padding:8px 6px",
+                "cursor:pointer",
+                "box-shadow:3px 0 12px rgba(0,0,0,0.5)"
+            ].join(";");
+            toggleBtn.querySelectorAll("svg").forEach(function(s){
+                s.style.color="#C8922A"; s.style.fill="#C8922A"; s.style.stroke="#C8922A";
+            });
+        } else {
+            // Créer bouton custom si natif absent
+            if (window.top.document.getElementById("__csb__")) return;
+            var btn = window.top.document.createElement("button");
+            btn.id = "__csb__";
+            btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
+            btn.style.cssText = [
+                "position:fixed","left:0","top:50%","transform:translateY(-50%)",
+                "z-index:99999","background:#1C1F27",
+                "border:1px solid #C8922A88","border-left:none",
+                "border-radius:0 8px 8px 0","padding:10px 8px","cursor:pointer",
+                "box-shadow:3px 0 12px rgba(0,0,0,0.5)",
+                "display:flex","align-items:center","justify-content:center"
+            ].join(";");
+            btn.onclick = function() {
+                var nb = window.top.document.querySelector('[data-testid="stSidebarCollapsedControl"] button');
+                if (nb) { nb.click(); return; }
+                window.top.document.querySelectorAll("button").forEach(function(b){
+                    var a = b.getAttribute("aria-label")||"";
+                    if(a.toLowerCase().includes("sidebar")||a.toLowerCase().includes("navigation")) b.click();
+                });
+            };
+            btn.onmouseenter = function(){ btn.style.background="#C8922A22"; btn.style.borderColor="#C8922A"; };
+            btn.onmouseleave = function(){ btn.style.background="#1C1F27";   btn.style.borderColor="#C8922A88"; };
+            window.top.document.body.appendChild(btn);
+        }
+    }
+
+    // Observer DOM parent (Streamlit tourne dans un iframe)
+    var target = window.top ? window.top.document.body : document.body;
+    new MutationObserver(fixSidebarToggle).observe(target, {childList:true, subtree:true});
+    setInterval(fixSidebarToggle, 600);
+    fixSidebarToggle();
+})();
+</script>
+""", height=0, scrolling=False)
 
 # ═══════════════════════════════════════════════════════════
 #  SVG ICONS
@@ -596,7 +662,6 @@ model_data = load_model()
 
 if "historique" not in st.session_state:
     st.session_state.historique = []
-
 
 # ═══════════════════════════════════════════════════════════
 #  SIDEBAR
@@ -714,143 +779,23 @@ all_features         = model_data["all_features"]
 THRESHOLD            = model_data.get("threshold", 0.76)  # Seuil optimisé
 
 # ═══════════════════════════════════════════════════════════
-#  TOPBAR + MODALE PERFORMANCES  (st.dialog — Streamlit ≥ 1.32)
+#  TOPBAR
 # ═══════════════════════════════════════════════════════════
-
-@st.dialog("Performances du Modèle", width="large")
-def show_perf_dialog():
-    m = model_data["metrics"]
-    st.markdown(f"""
-<style>
-/* Styles internes à la dialog Streamlit */
-[data-testid="stDialog"] {{
-    background: transparent !important;
-}}
-[data-testid="stDialog"] > div {{
-    background: linear-gradient(145deg,#13151C,#0e1018) !important;
-    border: 1px solid rgba(200,146,42,0.3) !important;
-    border-radius: 18px !important;
-    box-shadow: 0 25px 70px rgba(0,0,0,0.8) !important;
-}}
-</style>
-
-<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;
-            padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.06);">
-  <div style="width:40px;height:40px;border-radius:10px;
-              background:linear-gradient(135deg,#1a2e1a,#0d1f0d);
-              border:1px solid rgba(34,197,94,0.3);
-              display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-    </svg>
-  </div>
-  <div>
-    <div style="font-size:0.72rem;color:#4B5261;margin-top:2px;">
-      Régression Logistique · Pipeline Scikit-Learn · Évaluation sur jeu de test
-    </div>
-  </div>
-</div>
-
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-
-  <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.18);border-radius:12px;padding:16px;">
-    <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2.5">
-        <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
-      </svg>
-      <span style="font-size:0.62rem;color:#4B5261;text-transform:uppercase;letter-spacing:1px;font-weight:700;">AUC-ROC</span>
-    </div>
-    <div style="font-size:1.8rem;font-weight:800;color:#22C55E;letter-spacing:-1px;line-height:1;">{m['auc']:.4f}</div>
-    <div style="font-size:0.64rem;color:#22C55E;opacity:0.7;margin-top:5px;">Excellent pouvoir discriminant</div>
-  </div>
-
-  <div style="background:rgba(200,146,42,0.06);border:1px solid rgba(200,146,42,0.18);border-radius:12px;padding:16px;">
-    <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C8922A" stroke-width="2.5">
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-      </svg>
-      <span style="font-size:0.62rem;color:#4B5261;text-transform:uppercase;letter-spacing:1px;font-weight:700;">F1-Score</span>
-    </div>
-    <div style="font-size:1.8rem;font-weight:800;color:#C8922A;letter-spacing:-1px;line-height:1;">{m['f1']:.4f}</div>
-    <div style="font-size:0.64rem;color:#C8922A;opacity:0.7;margin-top:5px;">Équilibre précision / rappel</div>
-  </div>
-
-  <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:16px;">
-    <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.5">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-        <polyline points="22 4 12 14.01 9 11.01"/>
-      </svg>
-      <span style="font-size:0.62rem;color:#4B5261;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Précision</span>
-    </div>
-    <div style="font-size:1.8rem;font-weight:800;color:#3B82F6;letter-spacing:-1px;line-height:1;">{m['precision']:.4f}</div>
-    <div style="font-size:0.64rem;color:#3B82F6;opacity:0.7;margin-top:5px;">Vrais positifs / prédits positifs</div>
-  </div>
-
-  <div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.18);border-radius:12px;padding:16px;">
-    <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2.5">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-      <span style="font-size:0.62rem;color:#4B5261;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Rappel Défaut</span>
-    </div>
-    <div style="font-size:1.8rem;font-weight:800;color:#A855F7;letter-spacing:-1px;line-height:1;">{m['recall']:.4f}</div>
-    <div style="font-size:0.64rem;color:#A855F7;opacity:0.7;margin-top:5px;">Détection des mauvais payeurs</div>
-  </div>
-</div>
-
-<div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);
-            border-radius:12px;padding:13px 16px;
-            display:flex;align-items:center;justify-content:space-between;">
-  <div style="display:flex;align-items:center;gap:8px;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2">
-      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-    </svg>
-    <span style="font-size:0.77rem;color:#9CA3AF;">Seuil de décision optimisé</span>
-  </div>
-  <div style="font-size:0.92rem;font-weight:800;color:#EF4444;">{THRESHOLD*100:.0f}% <span style="font-size:0.68rem;font-weight:500;color:#6B7280;">probabilité de défaut</span></div>
-</div>
-
-<div style="margin-top:12px;font-size:0.63rem;color:#2D3244;text-align:center;">
-  ISM Dakar · MBA1 Finance Digitale
-</div>
-    """, unsafe_allow_html=True)
-
-# ─── Topbar ───────────────────────────────────────────────
-st.markdown("""
-<style>
-[data-testid="stSidebarCollapsedControl"] { display:none !important; }
-</style>
-""", unsafe_allow_html=True)
-
-_col_left, _col_right = st.columns([5, 1])
-
-with _col_left:
-    st.markdown(f"""
-    <div class="topbar">
-        <div class="topbar-left">
-            <div class="topbar-icon">{icon_bank()}</div>
-            <div>
-                <div class="topbar-title">Système d'Analyse de Risque Crédit</div>
-                <div class="topbar-sub">Régression Logistique · Pipeline Scikit-Learn · {len(all_features)} features</div>
-            </div>
+st.markdown(f"""
+<div class="topbar">
+    <div class="topbar-left">
+        <div class="topbar-icon">{icon_bank()}</div>
+        <div>
+            <div class="topbar-title">Système d'Analyse de Risque Crédit</div>
+            <div class="topbar-sub">Régression Logistique · Pipeline Scikit-Learn · {len(all_features)} features</div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
-
-with _col_right:
-    st.markdown("""<style>
-    section.main > div > div:nth-child(1) > div > div:nth-child(2) button {
-        font-size:0.7rem !important; font-weight:700 !important;
-        padding:5px 12px !important; border-radius:20px !important;
-        color:#22C55E !important; background:#0d2918 !important;
-        border:1px solid #22C55E55 !important;
-        box-shadow:0 0 10px rgba(34,197,94,0.12) !important;
-    }
-    </style>""", unsafe_allow_html=True)
-    if st.button(f"⬤ Modèle Actif · AUC {model_data['metrics']['auc']:.4f}", key="btn_perf_open"):
-        show_perf_dialog()
+    <div class="topbar-right">
+        <div class="topbar-badge green">● Modèle Actif</div>
+        <div class="topbar-badge">AUC {model_data['metrics']['auc']:.4f}</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════
 #  FORMULAIRE
