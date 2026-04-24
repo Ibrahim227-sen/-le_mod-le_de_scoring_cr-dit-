@@ -628,13 +628,13 @@ def load_model():
     data = joblib.load(path)
     # Garantir que le threshold est présent
     if "threshold" not in data:
-        data["threshold"] = 0.76
+        data["threshold"] = 0.50
     return data
 
 # Force rechargement si version du modèle a changé
 if "model_version" not in st.session_state:
     load_model.clear()
-    st.session_state["model_version"] = "v2_threshold076"
+    st.session_state["model_version"] = "v3_threshold050"
 
 model_data = load_model()
 
@@ -707,7 +707,7 @@ with st.sidebar:
             </div>
             <div style="margin-top:0.7rem; padding-top:0.7rem; border-top:1px solid #1E2028;">
                 <div style="font-size:0.72rem; color:#686D78; line-height:1.5;">
-                    <span style="color:#C8922A; font-weight:600;">Seuil décision :</span> 76% de probabilité de défaut.<br>
+                    <span style="color:#C8922A; font-weight:600;">Seuil décision :</span> 50% de probabilité de défaut.<br>
                     Au-delà → Crédit <span style="color:#EF4444; font-weight:600;">Refusé</span>
                 </div>
             </div>
@@ -1375,7 +1375,7 @@ with tab_scoring:
             <div class="kpi-card">
                 <div class="kpi-label">Probabilité de Défaut</div>
                 <div class="kpi-value" style="color:{p_color};">{proba_p:.1f}<span style="font-size:1.4rem;">%</span></div>
-                <div class="kpi-sub">seuil de décision : 76%</div>
+                <div class="kpi-sub">seuil de décision : {int(THRESHOLD*100)}%</div>
                 <div class="kpi-badge {'eleve' if proba >= THRESHOLD else 'faible'}">{'Au-dessus' if proba >= THRESHOLD else 'En-dessous'} du seuil</div>
             </div>
             """, unsafe_allow_html=True)
